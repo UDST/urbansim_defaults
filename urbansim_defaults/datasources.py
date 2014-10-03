@@ -12,20 +12,20 @@ pd.options.mode.chained_assignment = None
 
 
 @sim.table_source('buildings')
-def buildings(store, households, jobs, building_sqft_per_job, config):
+def buildings(store, households, jobs, building_sqft_per_job, settings):
     df = store['buildings']
 
-    if config.get("set_nan_price_to_zero", False):
+    if settings.get("set_nan_price_to_zero", False):
         for col in ["residential_sales_price", "non_residential_rent"]:
             df[col] = 0
 
-    if config.get("reconcile_residential_units_and_households", False):
+    if settings.get("reconcile_residential_units_and_households", False):
         # prevent overfull buildings (residential)
         df["residential_units"] = pd.concat([df.residential_units,
                                              households.building_id.value_counts()
                                              ], axis=1).max(axis=1)
 
-    if config.get("reconcile_non_residential_sqft_and_jobs", False):
+    if settings.get("reconcile_non_residential_sqft_and_jobs", False):
         # prevent overfull buildings (non-residential)
         tmp_df = pd.concat([
             df.non_residential_sqft,
@@ -34,7 +34,7 @@ def buildings(store, households, jobs, building_sqft_per_job, config):
         ], axis=1)
         df["non_residential_sqft"] = tmp_df.max(axis=1).apply(np.ceil)
 
-    fill_nas_cfg = config.get("table_reprocess", {}).get("buildings", None)
+    fill_nas_cfg = settings.get("table_reprocess", {}).get("buildings", None)
     if fill_nas_cfg is not None:
         df = utils.table_reprocess(fill_nas_cfg, df)
 
@@ -54,14 +54,14 @@ def employment_controls():
 
 
 @sim.table_source('jobs')
-def jobs(store, config):
+def jobs(store, settings):
     df = store['jobs']
 
-    if config.get("remove_invalid_building_ids", True):
+    if settings.get("remove_invalid_building_ids", True):
         # have to do it this way to prevent circular reference
         df.building_id.loc[~df.building_id.isin(store['buildings'].index)] = -1
 
-    fill_nas_cfg = config.get("table_reprocess", {}).get("jobs", None)
+    fill_nas_cfg = settings.get("table_reprocess", {}).get("jobs", None)
     if fill_nas_cfg is not None:
         df = utils.table_reprocess(fill_nas_cfg, df)
 
@@ -69,14 +69,14 @@ def jobs(store, config):
 
 
 @sim.table_source('households')
-def households(store, config):
+def households(store, settings):
     df = store['households']
 
-    if config.get("remove_invalid_building_ids", True):
+    if settings.get("remove_invalid_building_ids", True):
         # have to do it this way to prevent circular reference
         df.building_id.loc[~df.building_id.isin(store['buildings'].index)] = -1
 
-    fill_nas_cfg = config.get("table_reprocess", {}).get("households", None)
+    fill_nas_cfg = settings.get("table_reprocess", {}).get("households", None)
     if fill_nas_cfg is not None:
         df = utils.table_reprocess(fill_nas_cfg, df)
 
@@ -103,8 +103,8 @@ def nodes():
 
 
 @sim.table("logsums")
-def logsums(config):
-    logsums_index = config.get("logsums_index_col", "taz")
+def logsums(settings):
+    logsums_index = settings.get("logsums_index_col", "taz")
     return pd.read_csv(os.path.join(misc.data_dir(),
                                     'logsums.csv'),
                        index_col=logsums_index)
