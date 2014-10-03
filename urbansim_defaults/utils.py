@@ -64,12 +64,17 @@ def deal_with_nas(df):
     return df
 
 
-def fill_nas_from_config(dfname, df):
+def table_reprocess(cfg, df):
     df_cnt = len(df)
-    fillna_config = sim.get_injectable("fillna_config")
-    fillna_config_df = fillna_config[dfname]
-    for fname in fillna_config_df:
-        filltyp, dtyp = fillna_config_df[fname]
+
+    if "filter" in cfg:
+        df = df.query(cfg["filter"])
+
+    assert "fill_nas" in cfg
+    cfg = cfg["fill_nas"]
+
+    for fname in cfg:
+        filltyp, dtyp = cfg[fname]["how"], cfg[fname]["type"]
         s_cnt = df[fname].count()
         fill_cnt = df_cnt - s_cnt
         if filltyp == "zero":
@@ -78,6 +83,8 @@ def fill_nas_from_config(dfname, df):
             val = df[fname].dropna().value_counts().idxmax()
         elif filltyp == "median":
             val = df[fname].dropna().quantile()
+        elif filltyp == "drop":
+            df = df.dropna(subset=[fname])
         else:
             assert 0, "Fill type not found!"
         print "Filling column {} with value {} ({} values)".\
@@ -200,7 +207,6 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         lcm = yaml_to_class(cfg).from_yaml(str_or_buffer=cfg)
         base_multiplier = sim.get_injectable("submarkets_ratios") if\
             "submarkets_ratios" in sim.list_injectables() else None
-        # TODO zone_id and residential_sales_price should not be hard-coded
         new_prices, submarkets_ratios = supply_and_demand(
             lcm,
             movers,

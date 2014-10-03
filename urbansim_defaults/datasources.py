@@ -16,8 +16,7 @@ def buildings(store, households, jobs, building_sqft_per_job, config):
     df = store['buildings']
 
     if config.get("set_nan_price_to_zero", False):
-        for col in ["residential_sales_price", "residential_rent",
-                    "non_residential_rent"]:
+        for col in ["residential_sales_price", "non_residential_rent"]:
             df[col] = 0
 
     if config.get("reconcile_residential_units_and_households", False):
@@ -35,8 +34,9 @@ def buildings(store, households, jobs, building_sqft_per_job, config):
         ], axis=1)
         df["non_residential_sqft"] = tmp_df.max(axis=1).apply(np.ceil)
 
-    if config.get("fill_building_nas", False):
-        df = utils.fill_nas_from_config('buildings', df)
+    fill_nas_cfg = config.get("table_reprocess", {}).get("buildings", None)
+    if fill_nas_cfg is not None:
+        df = utils.table_reprocess(fill_nas_cfg, df)
 
     return df
 
@@ -61,6 +61,10 @@ def jobs(store, config):
         # have to do it this way to prevent circular reference
         df.building_id.loc[~df.building_id.isin(store['buildings'].index)] = -1
 
+    fill_nas_cfg = config.get("table_reprocess", {}).get("jobs", None)
+    if fill_nas_cfg is not None:
+        df = utils.table_reprocess(fill_nas_cfg, df)
+
     return df
 
 
@@ -71,6 +75,10 @@ def households(store, config):
     if config.get("remove_invalid_building_ids", True):
         # have to do it this way to prevent circular reference
         df.building_id.loc[~df.building_id.isin(store['buildings'].index)] = -1
+
+    fill_nas_cfg = config.get("table_reprocess", {}).get("households", None)
+    if fill_nas_cfg is not None:
+        df = utils.table_reprocess(fill_nas_cfg, df)
 
     return df
 
@@ -103,8 +111,8 @@ def logsums(config):
 
 
 # this specifies the relationships between tables
-sim.broadcast('nodes', 'buildings', cast_index=True, onto_on='_node_id')
-sim.broadcast('nodes', 'parcels', cast_index=True, onto_on='_node_id')
+sim.broadcast('nodes', 'buildings', cast_index=True, onto_on='node_id')
+sim.broadcast('nodes', 'parcels', cast_index=True, onto_on='node_id')
 sim.broadcast('logsums', 'parcels', cast_index=True, onto_on='zone_id')
 sim.broadcast('logsums', 'buildings', cast_index=True, onto_on='zone_id')
 sim.broadcast('parcels', 'buildings', cast_index=True, onto_on='parcel_id')
