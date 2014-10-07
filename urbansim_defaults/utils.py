@@ -179,8 +179,13 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
     cfg = misc.config(cfg)
 
     choosers_df = to_frame(choosers, [], cfg, additional_columns=[out_fname])
+
+    additional_columns = [supply_fname, vacant_fname]
+    if enable_supply_correction is not None and \
+            "submarket_col" in enable_supply_correction:
+        additional_columns += [enable_supply_correction["submarket_col"]]
     locations_df = to_frame(buildings, join_tbls, cfg,
-                            [supply_fname, vacant_fname])
+                            additional_columns=additional_columns)
 
     available_units = buildings[supply_fname]
     vacant_units = buildings[vacant_fname]
@@ -207,15 +212,21 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         lcm = yaml_to_class(cfg).from_yaml(str_or_buffer=cfg)
         base_multiplier = sim.get_injectable("submarkets_ratios") if\
             "submarkets_ratios" in sim.list_injectables() else None
+        kwargs = enable_supply_correction.get('kwargs', {})
         new_prices, submarkets_ratios = supply_and_demand(
             lcm,
             movers,
             units,
             enable_supply_correction["submarket_col"],
             enable_supply_correction["price_col"],
-            base_multiplier=base_multiplier)
+            base_multiplier=base_multiplier, **kwargs)
         # we will only get back new prices for those alternatives
         # that pass the filter
+        print "Running supply and demand"
+        print "Simulated Prices"
+        print units[enable_supply_correction["price_col"]].describe()
+        print "Submarket Price Shifters", submarkets_ratios.describe()
+        print "Adjusted Prices", new_prices.describe()
         units.loc[new_prices.index, enable_supply_correction["price_col"]] = \
             new_prices.values
         sim.add_injectable("submarkets_ratios", submarkets_ratios)
@@ -319,7 +330,7 @@ def run_feasibility(parcels, parcel_price_callback,
     # add prices for each use
     for use in pf.config.uses:
         # assume we can get the 80th percentile price for new development
-        df[use] = parcel_price_callback(use, .8)
+        df[use] = parcel_price_callback(use)
 
     # convert from cost to yearly rent
     if residential_to_yearly:
