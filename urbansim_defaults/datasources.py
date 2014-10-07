@@ -16,7 +16,7 @@ def buildings(store, households, jobs, building_sqft_per_job, settings):
     df = store['buildings']
 
     if settings.get("set_nan_price_to_zero", False):
-        for col in ["residential_sales_price", "non_residential_rent"]:
+        for col in ["residential_price", "non_residential_price"]:
             df[col] = 0
 
     if settings.get("reconcile_residential_units_and_households", False):

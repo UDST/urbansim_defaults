@@ -225,8 +225,10 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         print "Running supply and demand"
         print "Simulated Prices"
         print units[enable_supply_correction["price_col"]].describe()
-        print "Submarket Price Shifters", submarkets_ratios.describe()
-        print "Adjusted Prices", new_prices.describe()
+        print "Submarket Price Shifters"
+        print submarkets_ratios.describe()
+        print "Adjusted Prices"
+        print new_prices.describe()
         units.loc[new_prices.index, enable_supply_correction["price_col"]] = \
             new_prices.values
         sim.add_injectable("submarkets_ratios", submarkets_ratios)
@@ -286,7 +288,7 @@ def _print_number_unplaced(df, fieldname):
 
 def run_feasibility(parcels, parcel_price_callback,
                     parcel_use_allowed_callback, residential_to_yearly=True,
-                    historic_preservation=None,
+                    parcel_filter=None,
                     config=None, pass_through=[]):
     """
     Execute development feasibility on all parcels
@@ -305,10 +307,11 @@ def run_feasibility(parcels, parcel_price_callback,
     residential_to_yearly : boolean (default true)
         Whether to use the cap rate to convert the residential price from total
         sales price per sqft to rent per sqft
-    historic_preservation : string
+    parcel_filter : string
         A filter to apply to the parcels data frame to remove parcels from
         consideration - is typically used to remove parcels with buildings
-        older than a certain date
+        older than a certain date for historical preservation, but is
+        generally useful
     config : SqFtProFormaConfig configuration object.  Optional.  Defaults to None
     pass_through : list of strings
         Will be passed to the feasibility lookup function - is used to pass
@@ -324,8 +327,8 @@ def run_feasibility(parcels, parcel_price_callback,
 
     df = parcels.to_frame()
 
-    if historic_preservation:
-        df = df.query(historic_preservation)
+    if parcel_filter:
+        df = df.query(parcel_filter)
 
     # add prices for each use
     for use in pf.config.uses:
