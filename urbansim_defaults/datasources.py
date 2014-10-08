@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import os
 import utils
+import uuid
+import yaml
 from urbansim.utils import misc
 import urbansim.sim.simulation as sim
 
@@ -9,6 +11,41 @@ import warnings
 
 warnings.filterwarnings('ignore', category=pd.io.pytables.PerformanceWarning)
 pd.options.mode.chained_assignment = None
+
+
+sim.add_injectable("settings",
+                   yaml.load(open(os.path.join(misc.configs_dir(),
+                                               "settings.yaml"))))
+
+
+sim.add_injectable("run_number", misc.get_run_number())
+
+
+sim.add_injectable("uuid", uuid.uuid4().hex)
+
+
+sim.add_injectable("store", pd.HDFStore(os.path.join(misc.data_dir(),
+                   sim.get_injectable('settings')["store"]), mode="r"))
+
+
+@sim.injectable("building_type_map")
+def building_type_map(settings):
+    return settings["building_type_map"]
+
+
+@sim.injectable("scenario")
+def scenario(settings):
+    return settings["scenario"]
+
+
+@sim.injectable("scenario_inputs")
+def scenario_inputs(settings):
+    return settings["scenario_inputs"]
+
+
+@sim.injectable("aggregations")
+def aggregations(settings):
+    return [sim.get_table(tbl) for tbl in settings["aggregation_tables"]]
 
 
 @sim.table_source('buildings')

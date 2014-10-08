@@ -134,6 +134,7 @@ def build_networks(settings):
 @sim.model('neighborhood_vars')
 def neighborhood_vars(net):
     nodes = networks.from_yaml(net, "neighborhood_vars.yaml")
+    nodes = nodes.fillna(0)
     print nodes.describe()
     sim.add_table("nodes", nodes)
 
@@ -141,6 +142,7 @@ def neighborhood_vars(net):
 @sim.model('price_vars')
 def price_vars(net):
     nodes2 = networks.from_yaml(net, "price_vars.yaml")
+    nodes2 = nodes2.fillna(0)
     print nodes2.describe()
     nodes = sim.get_table('nodes')
     nodes = nodes.to_frame().join(nodes2)
@@ -207,11 +209,10 @@ def non_residential_developer(feasibility, jobs, buildings, parcels, year,
 
 
 @sim.model("diagnostic_output")
-def diagnostic_output(households, homesales, buildings, zones, year):
+def diagnostic_output(households, buildings, zones, year):
     households = households.to_frame()
     buildings = buildings.to_frame()
     zones = zones.to_frame()
-    homesales = homesales.to_frame()
 
     zones['residential_units'] = buildings.groupby('zone_id').\
         residential_units.sum()
@@ -228,9 +229,6 @@ def diagnostic_output(households, homesales, buildings, zones, year):
     zones['average_income'] = households.groupby('zone_id').income.quantile()
     zones['household_size'] = households.groupby('zone_id').persons.quantile()
 
-    zones['empirical_res_price'] = homesales.groupby('zone_id').\
-        sale_price_flt.quantile()
-
     zones['residential_price'] = buildings.\
         query('general_type == "Residential"').groupby('zone_id').\
         residential_price.quantile()
@@ -241,6 +239,9 @@ def diagnostic_output(households, homesales, buildings, zones, year):
     zones['industrial_rent'] = \
         buildings[buildings.general_type == "Industrial"].\
         groupby('zone_id').non_residential_price.quantile()
+
+    if "price_shifters" in sim.list_injectables():
+        zones["price_shifters"] = sim.get_injectable("price_shifters")
 
     utils.add_simulation_output(zones, "diagnostic_outputs", year)
 

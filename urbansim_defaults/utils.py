@@ -23,14 +23,14 @@ def change_store(store_name):
 
 
 def change_scenario(scenario):
-    assert scenario in sim.get_injectable("scenario_inputs"), \
+    assert scenario in sim.get_injectable("scenario_inputs")(), \
         "Invalid scenario name"
     print "Changing scenario to '%s'" % scenario
     sim.add_injectable("scenario", scenario)
 
 
 def conditional_upzone(scenario, attr_name, upzone_name):
-    scenario_inputs = sim.get_injectable("scenario_inputs")
+    scenario_inputs = sim.get_injectable("scenario_inputs")()
     zoning_baseline = sim.get_table(
         scenario_inputs["baseline"]["zoning_table_name"])
     attr = zoning_baseline[attr_name]
@@ -210,8 +210,7 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         assert "submarket_col" in enable_supply_correction
 
         lcm = yaml_to_class(cfg).from_yaml(str_or_buffer=cfg)
-        base_multiplier = sim.get_injectable("submarkets_ratios") if\
-            "submarkets_ratios" in sim.list_injectables() else None
+        base_multiplier = sim.get_injectable("price_shifters")
         kwargs = enable_supply_correction.get('kwargs', {})
         new_prices, submarkets_ratios = supply_and_demand(
             lcm,
@@ -231,7 +230,7 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         print new_prices.describe()
         units.loc[new_prices.index, enable_supply_correction["price_col"]] = \
             new_prices.values
-        sim.add_injectable("submarkets_ratios", submarkets_ratios)
+        sim.add_injectable("price_shifters", submarkets_ratios)
 
     if len(movers) > vacant_units.sum():
         print "WARNING: Not enough locations for movers"
