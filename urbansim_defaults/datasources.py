@@ -139,7 +139,7 @@ def nodes():
     return pd.DataFrame()
 
 
-@sim.table("logsums")
+@sim.table_source("logsums")
 def logsums(settings):
     logsums_index = settings.get("logsums_index_col", "taz")
     return pd.read_csv(os.path.join(misc.data_dir(),
