@@ -203,33 +203,43 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
     print "    in %d buildings total in the region" % len(vacant_units)
 
     movers = choosers_df[choosers_df[out_fname] == -1]
+    print "There are %d total movers for this LCM" % len(movers)
 
     if enable_supply_correction is not None:
         assert isinstance(enable_supply_correction, dict)
         assert "price_col" in enable_supply_correction
+        price_col = enable_supply_correction["price_col"]
         assert "submarket_col" in enable_supply_correction
+        submarket_col = enable_supply_correction["submarket_col"]
 
         lcm = yaml_to_class(cfg).from_yaml(str_or_buffer=cfg)
         base_multiplier = sim.get_injectable("price_shifters")
+        base_multiplier = None
         kwargs = enable_supply_correction.get('kwargs', {})
         new_prices, submarkets_ratios = supply_and_demand(
             lcm,
             movers,
             units,
-            enable_supply_correction["submarket_col"],
-            enable_supply_correction["price_col"],
+            submarket_col,
+            price_col,
             base_multiplier=base_multiplier, **kwargs)
         # we will only get back new prices for those alternatives
         # that pass the filter
+        submarkets_ratios = submarkets_ratios.reindex(
+            sim.get_table('zones').index).fillna(1)
+
         print "Running supply and demand"
         print "Simulated Prices"
-        print units[enable_supply_correction["price_col"]].describe()
+        print buildings[price_col].describe()
         print "Submarket Price Shifters"
         print submarkets_ratios.describe()
+        # we want new prices on the buildings, not on the units, so apply
+        # shifters directly to buildings and ignore unit prices
+        new_prices = buildings[price_col] * \
+                     submarkets_ratios.loc[buildings[submarket_col]].values
+        buildings.update_col_from_series(price_col, new_prices)
         print "Adjusted Prices"
-        print new_prices.describe()
-        units.loc[new_prices.index, enable_supply_correction["price_col"]] = \
-            new_prices.values
+        print buildings[price_col].describe()
         sim.add_injectable("price_shifters", submarkets_ratios)
 
     if len(movers) > vacant_units.sum():
