@@ -209,10 +209,17 @@ def non_residential_developer(feasibility, jobs, buildings, parcels, year,
 
 
 @sim.model("diagnostic_output")
-def diagnostic_output(households, buildings, zones, year):
+def diagnostic_output(households, buildings, parcels, zones, year):
     households = households.to_frame()
     buildings = buildings.to_frame()
+    parcels = parcels.to_frame()
     zones = zones.to_frame()
+
+    zones['zoned_du'] = parcels.groupby('zone_id').zoned_du.sum()
+    zones['zoned_du_underbuild'] = parcels.groupby('zone_id').\
+        zoned_du_underbuild.sum()
+    zones['zoned_du_underbuild_ratio'] = zones.zoned_du_underbuild /\
+        zones.zoned_du
 
     zones['residential_units'] = buildings.groupby('zone_id').\
         residential_units.sum()

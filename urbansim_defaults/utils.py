@@ -30,7 +30,7 @@ def change_scenario(scenario):
 
 
 def conditional_upzone(scenario, attr_name, upzone_name):
-    scenario_inputs = sim.get_injectable("scenario_inputs")()
+    scenario_inputs = sim.get_injectable("scenario_inputs")
     zoning_baseline = sim.get_table(
         scenario_inputs["baseline"]["zoning_table_name"])
     attr = zoning_baseline[attr_name]
@@ -214,7 +214,14 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
 
         lcm = yaml_to_class(cfg).from_yaml(str_or_buffer=cfg)
         base_multiplier = sim.get_injectable("price_shifters")
-        base_multiplier = None
+
+        if enable_supply_correction.get("warm_start", False) == False:
+            base_multiplier = None
+
+        map_func = enable_supply_correction.get("map_func", None)
+        if map_func is not None:
+            map_func = sim.get_injectable(map_func)
+
         kwargs = enable_supply_correction.get('kwargs', {})
         new_prices, submarkets_ratios = supply_and_demand(
             lcm,
@@ -222,11 +229,17 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
             units,
             submarket_col,
             price_col,
-            base_multiplier=base_multiplier, **kwargs)
+            base_multiplier=base_multiplier,
+            map_func=map_func,
+            **kwargs)
+
         # we will only get back new prices for those alternatives
-        # that pass the filter
-        submarkets_ratios = submarkets_ratios.reindex(
-            sim.get_table('zones').index).fillna(1)
+        # that pass the filter - might need to specify the table in 
+        # order to get the complete index of possible submarkets
+        submarket_table = enable_supply_correction.get("submarket_table", None)
+        if submarket_table is not None:
+            submarkets_ratios = submarkets_ratios.reindex(
+                sim.get_table(submarket_table).index).fillna(1)
 
         print "Running supply and demand"
         print "Simulated Prices"
@@ -235,6 +248,8 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         print submarkets_ratios.describe()
         # we want new prices on the buildings, not on the units, so apply
         # shifters directly to buildings and ignore unit prices
+        sim.add_column(buildings.name, 
+                       price_col+"_hedonic", buildings[price_col])
         new_prices = buildings[price_col] * \
                      submarkets_ratios.loc[buildings[submarket_col]].values
         buildings.update_col_from_series(price_col, new_prices)
@@ -259,7 +274,17 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
 
     choosers.update_col_from_series(out_fname, new_buildings)
     _print_number_unplaced(choosers, out_fname)
-
+    
+    if enable_supply_correction is not None:
+        new_prices = buildings[price_col]
+        if "clip_final_price_low" in enable_supply_correction:
+            new_prices = new_prices.clip(lower=
+                enable_supply_correction["clip_final_price_low"])
+        if "clip_final_price_high" in enable_supply_correction:
+            new_prices = new_prices.clip(upper=
+                enable_supply_correction["clip_final_price_high"])
+        buildings.update_col_from_series(price_col, new_prices)
+            
     vacant_units = buildings[vacant_fname]
     print "    and there are now %d empty units" % vacant_units.sum()
     print "    and %d overfull buildings" % len(vacant_units[vacant_units < 0])

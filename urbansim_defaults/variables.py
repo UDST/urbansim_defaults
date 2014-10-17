@@ -107,6 +107,11 @@ def parcel_size(parcels, settings):
     return parcels.shape_area * settings.get('parcel_size_factor', 1)
 
 
+@sim.column('parcels', 'parcel_acres', cache=True)
+def parcel_acres(parcels):
+    # parcel_size needs to be in sqft
+    return parcels.parcel_size / 43560.0
+
 @sim.column('parcels', 'total_residential_units', cache=True)
 def total_residential_units(parcels, buildings):
     return buildings.residential_units.groupby(buildings.parcel_id).sum().\
@@ -123,6 +128,17 @@ def total_job_spaces(parcels, buildings):
 def total_sqft(parcels, buildings):
     return buildings.building_sqft.groupby(buildings.parcel_id).sum().\
         reindex(parcels.index).fillna(0)
+
+
+@sim.column('parcels', 'zoned_du', cache=True)
+def zoned_du(parcels):
+    return (parcels.max_dua * parcels.parcel_acres).\
+        reindex(parcels.index).fillna(0).round().astype('int')
+
+
+@sim.column('parcels', 'zoned_du_underbuild')
+def zoned_du_underbuild(parcels):
+    return (parcels.zoned_du - parcels.total_residential_units).clip(lower=0)
 
 
 @sim.column('parcels', 'ave_sqft_per_unit')
