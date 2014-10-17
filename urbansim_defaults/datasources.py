@@ -13,19 +13,27 @@ warnings.filterwarnings('ignore', category=pd.io.pytables.PerformanceWarning)
 pd.options.mode.chained_assignment = None
 
 
-sim.add_injectable("settings",
-                   yaml.load(open(os.path.join(misc.configs_dir(),
-                                               "settings.yaml"))))
+@sim.injectable('settings', cache=True)
+def settings():
+    with open(os.path.join(misc.configs_dir(), "settings.yaml")) as f:
+        return yaml.load(f)
 
 
-sim.add_injectable("run_number", misc.get_run_number())
+@sim.injectable('run_number')
+def run_number():
+    return misc.get_run_number()
 
 
-sim.add_injectable("uuid", uuid.uuid4().hex)
+@sim.injectable('uuid', cache=True)
+def uuid_hex():
+    return uuid.uuid4().hex
 
 
-sim.add_injectable("store", pd.HDFStore(os.path.join(misc.data_dir(),
-                   sim.get_injectable('settings')["store"]), mode="r"))
+@sim.injectable('store', cache=True)
+def hdfstore():
+    return pd.HDFStore(
+        os.path.join(misc.data_dir(), sim.get_injectable('settings')["store"]),
+        mode='r')
 
 
 @sim.injectable("building_type_map")
@@ -58,9 +66,9 @@ def buildings(store, households, jobs, building_sqft_per_job, settings):
 
     if settings.get("reconcile_residential_units_and_households", False):
         # prevent overfull buildings (residential)
-        df["residential_units"] = pd.concat([df.residential_units,
-                                             households.building_id.value_counts()
-                                             ], axis=1).max(axis=1)
+        df["residential_units"] = pd.concat(
+            [df.residential_units, households.building_id.value_counts()],
+            axis=1).max(axis=1)
 
     if settings.get("reconcile_non_residential_sqft_and_jobs", False):
         # prevent overfull buildings (non-residential)
@@ -153,5 +161,6 @@ sim.broadcast('nodes', 'parcels', cast_index=True, onto_on='node_id')
 sim.broadcast('logsums', 'buildings', cast_index=True, onto_on='zone_id')
 sim.broadcast('logsums', 'parcels', cast_index=True, onto_on='zone_id')
 sim.broadcast('parcels', 'buildings', cast_index=True, onto_on='parcel_id')
-sim.broadcast('buildings', 'households', cast_index=True, onto_on='building_id')
+sim.broadcast(
+    'buildings', 'households', cast_index=True, onto_on='building_id')
 sim.broadcast('buildings', 'jobs', cast_index=True, onto_on='building_id')
