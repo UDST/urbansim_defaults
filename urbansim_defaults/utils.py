@@ -218,9 +218,9 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         if enable_supply_correction.get("warm_start", False) == False:
             base_multiplier = None
 
-        map_func = enable_supply_correction.get("map_func", None)
-        if map_func is not None:
-            map_func = sim.get_injectable(map_func)
+        multiplier_func = enable_supply_correction.get("multiplier_func", None)
+        if multiplier_func is not None:
+            multiplier_func = sim.get_injectable(multiplier_func)
 
         kwargs = enable_supply_correction.get('kwargs', {})
         new_prices, submarkets_ratios = supply_and_demand(
@@ -230,7 +230,7 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
             submarket_col,
             price_col,
             base_multiplier=base_multiplier,
-            map_func=map_func,
+            multiplier_func=multiplier_func,
             **kwargs)
 
         # we will only get back new prices for those alternatives
