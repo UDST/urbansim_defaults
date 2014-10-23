@@ -7,11 +7,32 @@ import numpy as np
 import pandas as pd
 import urbansim.sim.simulation as sim
 from urbansim.utils import misc
-import os
 import json
 
 
 def conditional_upzone(scenario, scenario_inputs, attr_name, upzone_name):
+    """
+
+    Parameters
+    ----------
+    scenario : str
+        The name of the active scenario (set to "baseline" if no scenario
+        zoning)
+    scenario_inputs : dict
+        Dictionary of scenario options - keys are scenario names and values
+        are also dictionaries of key-value paris for scenario inputs.  Right
+        now "zoning_table_name" should be set to the table that contains the
+        scenario based zoning for that scenario
+    attr_name : str
+        The name of the attribute in the baseline zoning table
+    upzone_name : str
+        The name of the attribute in the scenario zoning table
+
+    Returns
+    -------
+    The new zoning per parcel which is increased if the scenario based
+    zoning is higher than the baseline zoning
+    """
     zoning_baseline = sim.get_table(
         scenario_inputs["baseline"]["zoning_table_name"])
     attr = zoning_baseline[attr_name]
@@ -24,12 +45,28 @@ def conditional_upzone(scenario, scenario_inputs, attr_name, upzone_name):
 
 
 def enable_logging():
+    """
+    A quick shortcut to enable logging at log level INFO
+    """
     from urbansim.utils import logutil
     logutil.set_log_level(logutil.logging.INFO)
     logutil.log_to_stream()
 
 
-def deal_with_nas(df):
+def check_nas(df):
+    """
+    Checks for nas and errors if they are found (also prints a report on how
+    many nas are found in each column)
+
+    Parameters
+    ----------
+    df : DataFrame
+        DataFrame to check for nas
+
+    Returns
+    -------
+    Nothing
+    """
     df_cnt = len(df)
     fail = False
 
@@ -42,10 +79,52 @@ def deal_with_nas(df):
                   (df_cnt-s_cnt, df_cnt, col)
 
     assert not fail, "NAs were found in dataframe, please fix"
-    return df
 
 
 def table_reprocess(cfg, df):
+    """
+    Reprocesses a table with the given configuration, mainly by filling nas
+    with the given configuration.
+
+    Parameters
+    ----------
+    cfg : dict
+        The configuration is specified as a nested dictionary, javascript
+        style, and a simple config is given below.  Most parameters should be
+        fairly self-explanatory.  "filter" filters the dataframe using the
+        query command in Pandas.  The "fill_nas" parameter is another
+        dictionary which takes each column and specifies how to fill nas -
+        options include "drop", "zero", "median", "mode", and "mean".  The
+        "type" must also be specified since items like "median" usually
+        return floats but the result is often desired to be an "int" - the
+        type is thus specified to avoid ambiguity.
+        {
+            "filter": "building_type_id >= 1 and building_type_id <= 14",
+            "fill_nas": {
+                "building_type_id": {
+                    "how": "drop",
+                    "type": "int"
+                },
+                "residential_units": {
+                    "how": "zero",
+                    "type": "int"
+                },
+                "year_built": {
+                    "how": "median",
+                    "type": "int"
+                },
+                "building_type_id": {
+                    "how": "mode",
+                    "type": "int"
+                }
+            }
+        }
+    df : DataFrame to process
+
+    Returns
+    -------
+    New DataFrame which is reprocessed according the configuration
+    """
     df_cnt = len(df)
 
     if "filter" in cfg:
@@ -64,6 +143,8 @@ def table_reprocess(cfg, df):
             val = df[fname].dropna().value_counts().idxmax()
         elif filltyp == "median":
             val = df[fname].dropna().quantile()
+        elif filltyp == "mean":
+            val = df[fname].dropna().mean()
         elif filltyp == "drop":
             df = df.dropna(subset=[fname])
         else:
@@ -75,6 +156,30 @@ def table_reprocess(cfg, df):
 
 
 def to_frame(tbl, join_tbls, cfg, additional_columns=[]):
+    """
+    Leverage all the built in functionality of the sim framework to join to
+    the specified tables, only accessing the columns used in cfg (the model
+    yaml configuration file), an any additionally passed columns (the sim
+    framework is smart enough to figure out which table to grab the column
+    off of)
+
+    Parameters
+    ----------
+    tbl : DataFrameWrapper
+        The table to join other tables to
+    join_tbls : list of DataFrameWrappers or strs
+        A list of tables to join to "tbl"
+    cfg : str
+        The filename of a yaml configuration file from which to parse the
+        strings which are actually used by the model
+    additional_columns : list of strs
+        A list of additional columns to include
+
+    Returns
+    -------
+    A single DataFrame with the index from tbl and the columns used by cfg
+    and any additional columns specified
+    """
     join_tbls = join_tbls if isinstance(join_tbls, list) else [join_tbls]
     tables = [tbl] + join_tbls
     cfg = yaml_to_class(cfg).from_yaml(str_or_buffer=cfg)
@@ -85,7 +190,7 @@ def to_frame(tbl, join_tbls, cfg, additional_columns=[]):
                               tables=tables, columns=columns)
     else:
         df = tables[0].to_frame(columns)
-    df = deal_with_nas(df)
+    check_nas(df)
     return df
 
 
