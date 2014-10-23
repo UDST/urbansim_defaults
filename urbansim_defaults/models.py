@@ -254,7 +254,11 @@ def diagnostic_output(households, buildings, parcels, zones, year, summary):
 
 @sim.model("clear_cache")
 def clear_cache():
-    sim.clear_cache()
+    # don't want to clear injectable cache since it stores state
+    # from year to year
+    sim._TABLE_CACHE.clear()
+    sim._COLUMN_CACHE.clear()
+    # sim.clear_cache()
 
 
 # this method is used to push messages from urbansim to websites for live

@@ -360,7 +360,7 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
 
         lcm = yaml_to_class(cfg).from_yaml(str_or_buffer=cfg)
 
-        if enable_supply_correction.get("warm_start", False) is False:
+        if enable_supply_correction.get("warm_start", False) is True:
             raise NotImplementedError()
 
         multiplier_func = enable_supply_correction.get("multiplier_func", None)
