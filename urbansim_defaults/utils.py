@@ -254,10 +254,9 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         submarket_col = enable_supply_correction["submarket_col"]
 
         lcm = yaml_to_class(cfg).from_yaml(str_or_buffer=cfg)
-        base_multiplier = sim.get_injectable("price_shifters")
 
-        if enable_supply_correction.get("warm_start", False) == False:
-            base_multiplier = None
+        if enable_supply_correction.get("warm_start", False) is False:
+            raise NotImplementedError()
 
         multiplier_func = enable_supply_correction.get("multiplier_func", None)
         if multiplier_func is not None:
@@ -270,7 +269,7 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
             units,
             submarket_col,
             price_col,
-            base_multiplier=base_multiplier,
+            base_multiplier=None,
             multiplier_func=multiplier_func,
             **kwargs)
 
@@ -281,6 +280,8 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         if submarket_table is not None:
             submarkets_ratios = submarkets_ratios.reindex(
                 sim.get_table(submarket_table).index).fillna(1)
+            # write final shifters to the submarket_table for use in debugging
+            sim.get_table(submarket_table)["price_shifters"] = submarkets_ratios
 
         print "Running supply and demand"
         print "Simulated Prices"
@@ -292,11 +293,10 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         sim.add_column(buildings.name, 
                        price_col+"_hedonic", buildings[price_col])
         new_prices = buildings[price_col] * \
-                     submarkets_ratios.loc[buildings[submarket_col]].values
+            submarkets_ratios.loc[buildings[submarket_col]].values
         buildings.update_col_from_series(price_col, new_prices)
         print "Adjusted Prices"
         print buildings[price_col].describe()
-        sim.add_injectable("price_shifters", submarkets_ratios)
 
     if len(movers) > vacant_units.sum():
         print "WARNING: Not enough locations for movers"
@@ -421,7 +421,8 @@ def run_feasibility(parcels, parcel_price_callback,
         consideration - is typically used to remove parcels with buildings
         older than a certain date for historical preservation, but is
         generally useful
-    config : SqFtProFormaConfig configuration object.  Optional.  Defaults to None
+    config : SqFtProFormaConfig configuration object.  Optional.  Defaults to
+        None
     pass_through : list of strings
         Will be passed to the feasibility lookup function - is used to pass
         variables from the parcel dataframe to the output dataframe, usually
@@ -432,7 +433,8 @@ def run_feasibility(parcels, parcel_price_callback,
     Adds a table called feasibility to the sim object (returns nothing)
     """
 
-    pf = sqftproforma.SqFtProForma(config) if config else sqftproforma.SqFtProForma()
+    pf = sqftproforma.SqFtProForma(config) if config \
+        else sqftproforma.SqFtProForma()
 
     df = parcels.to_frame()
 
@@ -683,8 +685,9 @@ class SimulationSummaryData(object):
         else:
             d = self.zone_output
 
-        assert d["index"] == list(zones_df.index), "Passing in zones dataframe " \
-            "that is not aligned on the same index as a previous dataframe"
+        assert d["index"] == list(zones_df.index), "Passing in zones " \
+            "dataframe that is not aligned on the same index as a previous " \
+            "dataframe"
 
         if year not in d["years"]:
             d["years"].append(year)
@@ -758,7 +761,7 @@ class SimulationSummaryData(object):
         -------
         Nothing
         """
-        if self.parcel_output:
+        if self.parcel_output is None:
             return
 
         po = self.parcel_output

@@ -150,11 +150,13 @@ def price_vars(net):
 
 
 @sim.model('feasibility')
-def feasibility(parcels, settings):
+def feasibility(parcels, settings,
+                parcel_sales_price_sqft_func,
+                parcel_is_allowed_func):
     kwargs = settings['feasibility']
     utils.run_feasibility(parcels,
-                          sim.get_injectable('parcel_sales_price_sqft'),
-                          sim.get_injectable('parcel_is_allowed'),
+                          parcel_sales_price_sqft_func,
+                          parcel_is_allowed_func,
                           **kwargs)
 
 
@@ -166,7 +168,7 @@ def add_extra_columns(df):
 
 @sim.model('residential_developer')
 def residential_developer(feasibility, households, buildings, parcels, year,
-                          settings, summary):
+                          settings, summary, form_to_btype_func):
     kwargs = settings['residential_developer']
     new_buildings = utils.run_developer(
         "residential",
@@ -178,7 +180,7 @@ def residential_developer(feasibility, households, buildings, parcels, year,
         parcels.total_residential_units,
         feasibility,
         year=year,
-        form_to_btype_callback=sim.get_injectable("form_to_btype_f"),
+        form_to_btype_callback=form_to_btype_func,
         add_more_columns_callback=add_extra_columns,
         **kwargs)
 
@@ -187,7 +189,7 @@ def residential_developer(feasibility, households, buildings, parcels, year,
 
 @sim.model('non_residential_developer')
 def non_residential_developer(feasibility, jobs, buildings, parcels, year,
-                              settings, summary):
+                              settings, summary, form_to_btype_func):
 
     kwargs = settings['non_residential_developer']
     new_buildings = utils.run_developer(
@@ -200,7 +202,7 @@ def non_residential_developer(feasibility, jobs, buildings, parcels, year,
         parcels.total_job_spaces,
         feasibility,
         year=year,
-        form_to_btype_callback=sim.get_injectable("form_to_btype_f"),
+        form_to_btype_callback=form_to_btype_func,
         add_more_columns_callback=add_extra_columns,
         residential=False,
         **kwargs)
@@ -246,9 +248,6 @@ def diagnostic_output(households, buildings, parcels, zones, year, summary):
     zones['industrial_rent'] = \
         buildings[buildings.general_type == "Industrial"].\
         groupby('zone_id').non_residential_price.quantile()
-
-    if "price_shifters" in sim.list_injectables():
-        zones["price_shifters"] = sim.get_injectable("price_shifters")
 
     summary.add_zone_output(zones, "diagnostic_outputs", year)
 
