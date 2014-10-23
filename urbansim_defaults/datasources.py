@@ -36,6 +36,11 @@ def hdfstore():
         mode='r')
 
 
+@sim.injectable("summary")
+def simulation_summary_data():
+    return utils.SimulationSummaryData()
+
+
 @sim.injectable("building_type_map")
 def building_type_map(settings):
     return settings["building_type_map"]

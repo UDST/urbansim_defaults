@@ -166,7 +166,7 @@ def add_extra_columns(df):
 
 @sim.model('residential_developer')
 def residential_developer(feasibility, households, buildings, parcels, year,
-                          settings):
+                          settings, summary):
     kwargs = settings['residential_developer']
     new_buildings = utils.run_developer(
         "residential",
@@ -182,12 +182,12 @@ def residential_developer(feasibility, households, buildings, parcels, year,
         add_more_columns_callback=add_extra_columns,
         **kwargs)
 
-    utils.add_parcel_output(new_buildings)
+    summary.add_parcel_output(new_buildings)
 
 
 @sim.model('non_residential_developer')
 def non_residential_developer(feasibility, jobs, buildings, parcels, year,
-                              settings):
+                              settings, summary):
 
     kwargs = settings['non_residential_developer']
     new_buildings = utils.run_developer(
@@ -205,11 +205,11 @@ def non_residential_developer(feasibility, jobs, buildings, parcels, year,
         residential=False,
         **kwargs)
 
-    utils.add_parcel_output(new_buildings)
+    summary.add_parcel_output(new_buildings)
 
 
 @sim.model("diagnostic_output")
-def diagnostic_output(households, buildings, parcels, zones, year):
+def diagnostic_output(households, buildings, parcels, zones, year, summary):
     households = households.to_frame()
     buildings = buildings.to_frame()
     parcels = parcels.to_frame()
@@ -250,7 +250,7 @@ def diagnostic_output(households, buildings, parcels, zones, year):
     if "price_shifters" in sim.list_injectables():
         zones["price_shifters"] = sim.get_injectable("price_shifters")
 
-    utils.add_simulation_output(zones, "diagnostic_outputs", year)
+    summary.add_zone_output(zones, "diagnostic_outputs", year)
 
 
 @sim.model("clear_cache")
@@ -261,7 +261,7 @@ def clear_cache():
 # this method is used to push messages from urbansim to websites for live
 # exploration of simulation results
 @sim.model("pusher")
-def pusher(year, run_number, uuid, settings):
+def pusher(year, run_number, uuid, settings, summary):
     try:
         import pusher
     except:
@@ -275,8 +275,8 @@ def pusher(year, run_number, uuid, settings):
         secret=settings['pusher']['secret']
     )
     host = settings['pusher']['host']
-    sim_output = host+"runs/run{}_simulation_output.json".format(run_number)
-    parcel_output = host+"runs/run{}_parcel_output.csv".format(run_number)
+    sim_output = host+summary.zone_indicator_file
+    parcel_output = host+summary.parcel_indicator_file
     p['urbansim'].trigger('simulation_year_completed',
                           {'year': year,
                            'region': settings['pusher']['region'],

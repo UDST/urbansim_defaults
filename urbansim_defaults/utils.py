@@ -11,26 +11,7 @@ import os
 import json
 
 
-def get_run_filename():
-    return os.path.join(misc.runs_dir(), "run%d.h5" %
-                        sim.get_injectable("run_number"))
-
-
-def change_store(store_name):
-    sim.add_injectable("store",
-                       pd.HDFStore(os.path.join(misc.data_dir(),
-                                                store_name), mode="r"))
-
-
-def change_scenario(scenario):
-    assert scenario in sim.get_injectable("scenario_inputs")(), \
-        "Invalid scenario name"
-    print "Changing scenario to '%s'" % scenario
-    sim.add_injectable("scenario", scenario)
-
-
-def conditional_upzone(scenario, attr_name, upzone_name):
-    scenario_inputs = sim.get_injectable("scenario_inputs")
+def conditional_upzone(scenario, scenario_inputs, attr_name, upzone_name):
     zoning_baseline = sim.get_table(
         scenario_inputs["baseline"]["zoning_table_name"])
     attr = zoning_baseline[attr_name]
@@ -109,6 +90,19 @@ def to_frame(tbl, join_tbls, cfg, additional_columns=[]):
 
 
 def yaml_to_class(cfg):
+    """
+    Convert the name of a yaml file and get the Python class of the model
+    associated with the configuratoin
+
+    Parameters
+    ----------
+    cfg : str
+        The name of the yaml configuration file
+
+    Returns
+    -------
+    Nothing
+    """
     import yaml
     model_type = yaml.load(open(cfg))["model_type"]
     return {
@@ -120,12 +114,41 @@ def yaml_to_class(cfg):
 
 
 def hedonic_estimate(cfg, tbl, join_tbls):
+    """
+    Estimate the hedonic model for the specified table
+
+    Parameters
+    ----------
+    cfg : string
+        The name of the yaml config file from which to read the hedonic model
+    tbl : DataFrameWrapper
+        A dataframe for which to estimate the hedonic
+    join_tbls : list of strings
+        A list of land use dataframes to give neighborhood info around the
+        buildings - will be joined to the buildings using existing broadcasts
+    """
     cfg = misc.config(cfg)
     df = to_frame(tbl, join_tbls, cfg)
     return yaml_to_class(cfg).fit_from_cfg(df, cfg)
 
 
 def hedonic_simulate(cfg, tbl, join_tbls, out_fname):
+    """
+    Simulate the hedonic model for the specified table
+
+    Parameters
+    ----------
+    cfg : string
+        The name of the yaml config file from which to read the hedonic model
+    tbl : DataFrameWrapper
+        A dataframe for which to estimate the hedonic
+    join_tbls : list of strings
+        A list of land use dataframes to give neighborhood info around the
+        buildings - will be joined to the buildings using existing broadcasts
+    out_fname : string
+        The output field name (should be present in tbl) to which to write
+        the resulting column to
+    """
     cfg = misc.config(cfg)
     df = to_frame(tbl, join_tbls, cfg)
     price_or_rent, _ = yaml_to_class(cfg).predict_from_cfg(df, cfg)
@@ -133,6 +156,26 @@ def hedonic_simulate(cfg, tbl, join_tbls, out_fname):
 
 
 def lcm_estimate(cfg, choosers, chosen_fname, buildings, join_tbls):
+    """
+    Estimate the location choices for the specified choosers
+
+    Parameters
+    ----------
+    cfg : string
+        The name of the yaml config file from which to read the location
+        choice model
+    choosers : DataFrameWrapper
+        A dataframe of agents doing the choosing
+    chosen_fname : str
+        The name of the column (present in choosers) which contains the ids
+        that identify the chosen alternatives
+    buildings : DataFrameWrapper
+        A dataframe of buildings which the choosers are locating in and which
+        have a supply.
+    join_tbls : list of strings
+        A list of land use dataframes to give neighborhood info around the
+        buildings - will be joined to the buildings using existing broadcasts
+    """
     cfg = misc.config(cfg)
     choosers = to_frame(choosers, [], cfg, additional_columns=[chosen_fname])
     alternatives = to_frame(buildings, join_tbls, cfg)
@@ -152,25 +195,23 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
     ----------
     cfg : string
         The name of the yaml config file from which to read the location
-        choice model.
-    choosers : DataFrame
-        A dataframe of agents doing the choosing.
-    buildings : DataFrame
+        choice model
+    choosers : DataFrameWrapper
+        A dataframe of agents doing the choosing
+    buildings : DataFrameWrapper
         A dataframe of buildings which the choosers are locating in and which
-        have a supply.
-    nodes : DataFrame
-        A land use dataset to give neighborhood info around the buildings -
-        will be joined to the buildings.
-    out_dfname : string
-        The name of the dataframe to write the simulated location to.
+        have a supply
+    join_tbls : list of strings
+        A list of land use dataframes to give neighborhood info around the
+        buildings - will be joined to the buildings using existing broadcasts.
     out_fname : string
-        The column name to write the simulated location to.
+        The column name to write the simulated location to
     supply_fname : string
         The string in the buildings table that indicates the amount of
-        available units there are for choosers, vacant or not.
+        available units there are for choosers, vacant or not
     vacant_fname : string
         The string in the buildings table that indicates the amount of vacant
-        units there will be for choosers.
+        units there will be for choosers
     enable_supply_correction : Python dict
         Should contain keys "price_col" and "submarket_col" which are set to
         the column names in buildings which contain the column for prices and
@@ -278,11 +319,11 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
     if enable_supply_correction is not None:
         new_prices = buildings[price_col]
         if "clip_final_price_low" in enable_supply_correction:
-            new_prices = new_prices.clip(lower=
-                enable_supply_correction["clip_final_price_low"])
+            new_prices = new_prices.clip(lower=enable_supply_correction[
+                "clip_final_price_low"])
         if "clip_final_price_high" in enable_supply_correction:
-            new_prices = new_prices.clip(upper=
-                enable_supply_correction["clip_final_price_high"])
+            new_prices = new_prices.clip(upper=enable_supply_correction[
+                "clip_final_price_high"])
         buildings.update_col_from_series(price_col, new_prices)
             
     vacant_units = buildings[vacant_fname]
@@ -291,6 +332,23 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
 
 
 def simple_relocation(choosers, relocation_rate, fieldname):
+    """
+    Run a simple rate based relocation model
+
+    Parameters
+    ----------
+    tbl : DataFrameWrapper or DataFrame
+        Table of agents that might relocate
+    rate : float
+        Rate of relocation
+    location_fname : str
+        The field name in the resulting dataframe to set to -1 (to unplace
+        new agents)
+
+    Returns
+    -------
+    Nothing
+    """
     print "Total agents: %d" % len(choosers)
     _print_number_unplaced(choosers, fieldname)
 
@@ -304,6 +362,23 @@ def simple_relocation(choosers, relocation_rate, fieldname):
 
 
 def simple_transition(tbl, rate, location_fname):
+    """
+    Run a simple growth rate transition model on the table passed in
+
+    Parameters
+    ----------
+    tbl : DataFrameWrapper
+        Table to be transitioned
+    rate : float
+        Growth rate
+    location_fname : str
+        The field name in the resulting dataframe to set to -1 (to unplace
+        new agents)
+
+    Returns
+    -------
+    Nothing
+    """
     transition = GrowthRateTransition(rate)
     df = tbl.to_frame(tbl.local_columns)
 
@@ -539,148 +614,178 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
     return ret_buildings
 
 
-def write_simulation_output(outname="./run{}_simulation_output.json"):
+class SimulationSummaryData(object):
     """
-    Write the full simulation to a file.
+    Keep track of zone-level and parcel-level output for use in the
+    simulation explorer.  Writes the correct format and filenames that the
+    simulation explorer expects.
 
     Parameters
     ----------
-    outname : string
-        A string name of the file, use "{}" notation and the run number will
-        be substituted
-
-    Returns
-    -------
-    Nothing
-    """
-    d = sim.get_injectable("simulation_output")
-    outname = outname.format(sim.get_injectable("run_number"))
-    outf = open(outname, "w")
-    json.dump(d, outf)
-    outf.close()
-
-
-def add_simulation_output(zones_df, name, year, round=2):
-    """
-    Pass in a dataframe and this function will store the results in the
-    simulation state to write out at the end (to describe how the simulation
-    changes over time)
-
-    Parameters
-    ----------
-    zones_df : DataFrame
-        dataframe of indicators whose index is the zone_id and columns are
-        indicators describing the simulation
-    name : string
-        The name of the dataframe to use to differentiate all the sources of
-        the indicators
-    year : int
-        The year to associate with these indicators
-    round : int
-        The number of decimal places to round to in the output json
-
-    Returnsd
-    -------
-    Nothing
+    run_number : int
+        The run number for this run
+    zone_indicator_file : optional, str
+        A template for the zone_indicator_filename - use {} notation and the
+        run_number will be substituted.  Should probably not be modified if
+        using the simulation explorer.
+    parcel_indicator_file : optional, str
+        A template for the parcel_indicator_filename - use {} notation and the
+        run_number will be substituted.  Should probably not be modified if
+        using the simulation explorer.
     """
 
-    key = "simulation_output"
+    def __init__(self,
+                 run_number,
+                 zone_indicator_file="runs/run{}_simulation_output.json",
+                 parcel_indicator_file="runs/run{}_parcel_output.csv"):
+        self.run_num = run_number
+        self.zone_indicator_file = zone_indicator_file.format(run_number)
+        self.parcel_indicator_file = \
+            parcel_indicator_file.format(run_number)
+        self.parcel_output = None
+        self.zone_output = None
 
-    if key not in sim.list_injectables() or sim.get_injectable(key) is None:
-        d = {
-            "index": list(zones_df.index),
-            "years": []
-        }
-    else:
-        d = sim.get_injectable(key)
+    def add_zone_output(self, zones_df, name, year, round=2):
+        """
+        Pass in a dataframe and this function will store the results in the
+        simulation state to write out at the end (to describe how the simulation
+        changes over time)
 
-    assert d["index"] == list(zones_df.index), "Passing in zones dataframe " \
-        "that is not aligned on the same index as a previous dataframe"
+        Parameters
+        ----------
+        zones_df : DataFrame
+            dataframe of indicators whose index is the zone_id and columns are
+            indicators describing the simulation
+        name : string
+            The name of the dataframe to use to differentiate all the sources of
+            the indicators
+        year : int
+            The year to associate with these indicators
+        round : int
+            The number of decimal places to round to in the output json
 
-    if year not in d["years"]:
-        d["years"].append(year)
-
-    for col in zones_df.columns:
-        d.setdefault(col, {})
-        d[col]["original_df"] = name
-        s = zones_df[col]
-        dtype = s.dtype
-        if dtype == "float64" or dtype == "float32":
-            s = s.fillna(0)
-            d[col][year] = [float(x) for x in list(s.round(round))]
-        elif dtype == "int64" or dtype == "int32":
-            s = s.fillna(0)
-            d[col][year] = [int(x) for x in list(s)]
+        Returns
+        -------
+        Nothing
+        """
+        # this creates a hierarchical json data structure to encapsulate
+        # zone-level indicators over the simulation years.  "index" is the ids
+        # of the shapes that this will be joined to and "year" is the list of
+        # years. Each indicator then get put under a two-level dictionary of
+        # column name and then year.  this is not the most efficient data
+        # structure but since the number of zones is pretty small, it is a
+        # simple and convenient data structure
+        if self.zone_output is None:
+            d = {
+                "index": list(zones_df.index),
+                "years": []
+            }
         else:
-            d[col][year] = list(s)
+            d = self.zone_output
 
-    sim.add_injectable("simulation_output", d)
+        assert d["index"] == list(zones_df.index), "Passing in zones dataframe " \
+            "that is not aligned on the same index as a previous dataframe"
 
+        if year not in d["years"]:
+            d["years"].append(year)
 
-def add_parcel_output(new_buildings):
-    """
-    Add new developments as parcel output
+        for col in zones_df.columns:
+            d.setdefault(col, {})
+            d[col]["original_df"] = name
+            s = zones_df[col]
+            dtype = s.dtype
+            if dtype == "float64" or dtype == "float32":
+                s = s.fillna(0)
+                d[col][year] = [float(x) for x in list(s.round(round))]
+            elif dtype == "int64" or dtype == "int32":
+                s = s.fillna(0)
+                d[col][year] = [int(x) for x in list(s)]
+            else:
+                d[col][year] = list(s)
 
-    Parameters
-    ----------
-    new_buildings : dataframe
-        best just to add the new buildings dataframe return from developer model
+        self.zone_output = d
 
-    Returns
-    -------
-    Nothing
-    """
-    if new_buildings is None:
-        return
+    def add_parcel_output(self, new_parcel_output):
+        """
+        Add new parcel-level indicators to the parcel output.
 
-    key = "developments"
-    if key in sim.list_injectables():
-        # merge with old new buildings
-        new_buildings = pd.concat([sim.get_injectable(key), new_buildings]).\
-            reset_index(drop=True)
+        Parameters
+        ----------
+        new_parcel_output : DataFrame
+            Adds a new set of parcel data for output exploration - this data
+            is merged with previous data that has been added.  This data is
+            generally used to capture new developments that UrbanSim has
+            predicted, thus it doesn't override previous years' indicators
 
-    sim.add_injectable(key, new_buildings)
+        Returns
+        -------
+        Nothing
+        """
+        if new_parcel_output is None:
+            return
 
+        if self.parcel_output is not None:
+            # merge with old  parcel output
+            self.parcel_output = \
+                pd.concat([self.parcel_output, new_parcel_output]).\
+                reset_index(drop=True)
+        else:
+            self.parcel_output = new_parcel_output
 
-def write_parcel_output(fname,
-                        add_xy=("parcels", "parcel_id", "x", "y", 3740, 4326)):
-    """
-    Write the parcel-level output to a json file using geopandas - note
-    requires geopandas!
+    def write_parcel_output(self,
+                            add_xy=None):
+        """
+        Write the parcel-level output to a csv file
 
-    Parameters
-    ----------
-    fname : string
-        The filename to write the output to
-    add_xy : tuple
-        Used to add x, y values to the output - tuple should contain the name
-        of the table which has the x and y values, the field in the development
-        table that joins to that table, and the names of the x and y columns -
-        the final 2 attributes use pyproj to change the coordinate system -
-        set to None, None if you don't want to convert (requires pyproj
+        Parameters
+        ----------
+        add_xy : dictionary (optional)
+            Used to add x, y values to the output - an example dictionary is
+            pasted below - the parameters should be fairly self explanatory.
+            Note that from_srid and to_srid can be omitted in which case the
+            coordinate system is not changed.  NOTE: pyproj is required
+            if changing coordinate systems
+            {
+                "xy_table": "parcels",
+                "foreign_key": "parcel_id",
+                "x_col": "x",
+                "y_col": "y",
+                "from_srid": 3740,
+                "to_srid": 4326
+            }
 
-    Returns
-    -------
-    Nothing
-    """
-    if "developments" not in sim.list_injectables():
-        return
-    table = sim.get_injectable("developments")
+        Returns
+        -------
+        Nothing
+        """
+        if self.parcel_output:
+            return
 
-    if add_xy is not None:
+        po = self.parcel_output
+        if add_xy is not None:
+            x_name, y_name = add_xy["x_col"], add_xy["y_col"]
+            xy_joinname = add_xy["foreign_key"]
+            xy_df = sim.get_table(add_xy["xy_table"])
+            po[x_name] = misc.reindex(xy_df[x_name], po[xy_joinname])
+            po[y_name] = misc.reindex(xy_df[y_name], po[xy_joinname])
 
-        xy_tblname, xy_joinname, x_name, y_name, from_epsg, to_epsg = add_xy
-        xy_df = sim.get_table(xy_tblname)
-        table[x_name] = misc.reindex(xy_df[x_name], table[xy_joinname])
-        table[y_name] = misc.reindex(xy_df[y_name], table[xy_joinname])
+            if "from_epsg" in add_xy and "to_epsg" in add_xy:
+                import pyproj
+                p1 = pyproj.Proj('+init=epsg:%d' % add_xy["from_epsg"])
+                p2 = pyproj.Proj('+init=epsg:%d' % add_xy["to_epsg"])
+                x2, y2 = pyproj.transform(p1, p2,
+                                          po[x_name].values,
+                                          po[y_name].values)
+                po[x_name], po[y_name] = x2, y2
 
-        if from_epsg is not None and to_epsg is not None:
-            import pyproj
-            p1 = pyproj.Proj('+init=epsg:%d' % from_epsg)
-            p2 = pyproj.Proj('+init=epsg:%d' % to_epsg)
-            x2, y2 = pyproj.transform(p1, p2, table[x_name].values,
-                                      table[y_name].values)
-            table[x_name], table[y_name] = x2, y2
+        po.to_csv(self.parcel_indicator_file, index_label="development_id")
 
-    table.to_csv(fname.format(sim.get_injectable("run_number")),
-                 index_label="development_id")
+    def write_zone_output(self):
+        """
+        Write the zone-level output to a file.
+        """
+        if self.zone_output is None:
+            return
+        outf = open(self.zone_indicator_file, "w")
+        json.dump(self.zone_output, outf)
+        outf.close()
