@@ -36,9 +36,9 @@ def hdfstore():
         mode='r')
 
 
-@sim.injectable("summary")
-def simulation_summary_data():
-    return utils.SimulationSummaryData()
+@sim.injectable("summary", cache=True)
+def simulation_summary_data(run_number):
+    return utils.SimulationSummaryData(run_number)
 
 
 @sim.injectable("building_type_map")

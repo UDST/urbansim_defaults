@@ -742,7 +742,7 @@ class SimulationSummaryData(object):
         add_xy : dictionary (optional)
             Used to add x, y values to the output - an example dictionary is
             pasted below - the parameters should be fairly self explanatory.
-            Note that from_srid and to_srid can be omitted in which case the
+            Note that from_epsg and to_epsg can be omitted in which case the
             coordinate system is not changed.  NOTE: pyproj is required
             if changing coordinate systems
             {
@@ -750,15 +750,15 @@ class SimulationSummaryData(object):
                 "foreign_key": "parcel_id",
                 "x_col": "x",
                 "y_col": "y",
-                "from_srid": 3740,
-                "to_srid": 4326
+                "from_epsg": 3740,
+                "to_epsg": 4326
             }
 
         Returns
         -------
         Nothing
         """
-        if self.parcel_output:
+        if self.parcel_output is None:
             return
 
         po = self.parcel_output
