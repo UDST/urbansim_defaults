@@ -120,7 +120,7 @@ def jobs_transition(jobs, settings):
     return utils.simple_transition(jobs, rate, "building_id")
 
 
-@sim.model('build_networks')
+@sim.injectable('net', cache=True)
 def build_networks(settings):
     name = settings['build_networks']['name']
     st = pd.HDFStore(os.path.join(misc.data_dir(), name), "r")
@@ -128,7 +128,7 @@ def build_networks(settings):
     net = pdna.Network(nodes["x"], nodes["y"], edges["from"], edges["to"],
                        edges[["weight"]])
     net.precompute(settings['build_networks']['max_distance'])
-    sim.add_injectable("net", net)
+    return net
 
 
 @sim.model('neighborhood_vars')
