@@ -1,6 +1,6 @@
 from urbansim.models import RegressionModel, SegmentedRegressionModel, \
     MNLLocationChoiceModel, SegmentedMNLLocationChoiceModel, \
-    GrowthRateTransition
+    GrowthRateTransition, transition
 from urbansim.models.supplydemand import supply_and_demand
 from urbansim.developer import sqftproforma, developer
 import numpy as np
@@ -493,6 +493,45 @@ def simple_transition(tbl, rate, location_fname):
 
     df[location_fname].loc[added] = -1
     sim.add_table(tbl.name, df)
+
+
+def full_transition(agents, agent_controls, year, settings, location_fname):
+    """
+    Run a transition model based on control totals specified in the usual
+    UrbanSim way
+
+    Parameters
+    ----------
+    agents : DataFrameWrapper
+        Table to be transitioned
+    agent_controls : DataFrameWrapper
+        Table of control totals
+    year : int
+        The year, which will index into the controls
+    settings : dict
+        Contains the configuration for the transition model - is specified
+        down to the yaml level with a "total_column" which specifies the
+        control total and an "add_columns" param which specified which
+        columns to add when calling to_frame (should be a list of the columns
+        needed to do the transition
+    location_fname : str
+        The field name in the resulting dataframe to set to -1 (to unplace
+        new agents)
+
+    Returns
+    -------
+    Nothing
+    """
+    ct = agent_controls.to_frame()
+    hh = agents.to_frame(agents.local_columns +
+                         settings['add_columns'])
+    print "Total agents before transition: {}".format(len(hh))
+    tran = transition.TabularTotalsTransition(ct, settings['total_column'])
+    model = transition.TransitionModel(tran)
+    new, added_hh_idx, new_linked = model.transition(hh, year)
+    new.loc[added_hh_idx, location_fname] = -1
+    print "Total agents after transition: {}".format(len(new))
+    sim.add_table(agents.name, new)
 
 
 def _print_number_unplaced(df, fieldname):

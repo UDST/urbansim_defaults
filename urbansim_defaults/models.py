@@ -1,10 +1,7 @@
-from urbansim.developer import developer
 import urbansim.sim.simulation as sim
 from urbansim.utils import misc
 from urbansim.utils import networks
-from urbansim.models import transition
 import os
-import random
 from urbansim_defaults import utils
 import time
 import datasources
@@ -78,18 +75,11 @@ def jobs_relocation(jobs, settings):
 
 @sim.model('households_transition')
 def households_transition(households, household_controls, year, settings):
-    ct = household_controls.to_frame()
-    hh = households.to_frame(households.local_columns +
-                             settings['households_transition']['add_columns'])
-    print "Total households before transition: {}".format(len(hh))
-    tran = transition.TabularTotalsTransition(ct,
-                                              settings['households_transition']
-                                              ['total_column'])
-    model = transition.TransitionModel(tran)
-    new, added_hh_idx, new_linked = model.transition(hh, year)
-    new.loc[added_hh_idx, "building_id"] = -1
-    print "Total households after transition: {}".format(len(new))
-    sim.add_table("households", new)
+    return utils.full_transition(households,
+                                 household_controls,
+                                 year,
+                                 settings['households_transition'],
+                                 "building_id")
 
 
 @sim.model('simple_households_transition')
@@ -100,18 +90,11 @@ def simple_households_transition(households, settings):
 
 @sim.model('jobs_transition')
 def jobs_transition(jobs, employment_controls, year, settings):
-    ct = employment_controls.to_frame()
-    hh = jobs.to_frame(jobs.local_columns +
-                       settings['jobs_transition']['add_columns'])
-    print "Total jobs before transition: {}".format(len(hh))
-    tran = transition.TabularTotalsTransition(ct,
-                                              settings['jobs_transition']
-                                              ['total_column'])
-    model = transition.TransitionModel(tran)
-    new, added_hh_idx, new_linked = model.transition(hh, year)
-    new.loc[added_hh_idx, "building_id"] = -1
-    print "Total jobs after transition: {}".format(len(new))
-    sim.add_table("jobs", new)
+    return utils.full_transition(jobs,
+                                 employment_controls,
+                                 year,
+                                 settings['jobs_transition'],
+                                 "building_id")
 
 
 @sim.model('simple_jobs_transition')
