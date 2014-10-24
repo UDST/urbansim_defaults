@@ -1,0 +1,900 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Introduction &mdash; urbansim_defaults 0.1dev documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="urbansim_defaults 0.1dev documentation" href="#"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="#" class="fa fa-home"> urbansim_defaults</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <!-- Local TOC -->
+            <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Introduction</a><ul>
+<li><a class="reference internal" href="#module-urbansim_defaults.utils">Module Documentation</a></li>
+<li><a class="reference internal" href="#index">Index</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="#">urbansim_defaults</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="#">Docs</a> &raquo;</li>
+      
+    <li>Introduction</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/index.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#module-urbansim_defaults.utils" title="urbansim_defaults.utils"><tt class="xref py py-obj docutils literal"><span class="pre">urbansim_defaults.utils</span></tt></a></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>This module wraps UrbanSim in a way which allows configuration of models in YAML which is suitable for use in the UrbanSim website.  This is primarily documentation for the <cite>utils.py</cite> module which wraps UrbanSim in a slightly higher level of abstraction.  UrbanSim defaults also includes default models, columns, and datasources, which are not currently documented in any depth.</p>
+<div class="section" id="module-urbansim_defaults.utils">
+<span id="module-documentation"></span><h2>Module Documentation<a class="headerlink" href="#module-urbansim_defaults.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="urbansim_defaults.utils.SimulationSummaryData">
+<em class="property">class </em><tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">SimulationSummaryData</tt><big>(</big><em>run_number</em>, <em>zone_indicator_file='runs/run{}_simulation_output.json'</em>, <em>parcel_indicator_file='runs/run{}_parcel_output.csv'</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#SimulationSummaryData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.SimulationSummaryData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Keep track of zone-level and parcel-level output for use in the
+simulation explorer.  Writes the correct format and filenames that the
+simulation explorer expects.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>run_number</strong> : int</p>
+<blockquote>
+<div><p>The run number for this run</p>
+</div></blockquote>
+<p><strong>zone_indicator_file</strong> : optional, str</p>
+<blockquote>
+<div><p>A template for the zone_indicator_filename - use {} notation and the
+run_number will be substituted.  Should probably not be modified if
+using the simulation explorer.</p>
+</div></blockquote>
+<p><strong>parcel_indicator_file</strong> : optional, str</p>
+<blockquote class="last">
+<div><p>A template for the parcel_indicator_filename - use {} notation and the
+run_number will be substituted.  Should probably not be modified if
+using the simulation explorer.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="urbansim_defaults.utils.SimulationSummaryData.add_parcel_output">
+<tt class="descname">add_parcel_output</tt><big>(</big><em>new_parcel_output</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#SimulationSummaryData.add_parcel_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.SimulationSummaryData.add_parcel_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add new parcel-level indicators to the parcel output.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>new_parcel_output</strong> : DataFrame</p>
+<blockquote>
+<div><p>Adds a new set of parcel data for output exploration - this data
+is merged with previous data that has been added.  This data is
+generally used to capture new developments that UrbanSim has
+predicted, thus it doesn&#8217;t override previous years&#8217; indicators</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Nothing</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="urbansim_defaults.utils.SimulationSummaryData.add_zone_output">
+<tt class="descname">add_zone_output</tt><big>(</big><em>zones_df</em>, <em>name</em>, <em>year</em>, <em>round=2</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#SimulationSummaryData.add_zone_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.SimulationSummaryData.add_zone_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pass in a dataframe and this function will store the results in the
+simulation state to write out at the end (to describe how the simulation
+changes over time)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>zones_df</strong> : DataFrame</p>
+<blockquote>
+<div><p>dataframe of indicators whose index is the zone_id and columns are
+indicators describing the simulation</p>
+</div></blockquote>
+<p><strong>name</strong> : string</p>
+<blockquote>
+<div><p>The name of the dataframe to use to differentiate all the sources of
+the indicators</p>
+</div></blockquote>
+<p><strong>year</strong> : int</p>
+<blockquote>
+<div><p>The year to associate with these indicators</p>
+</div></blockquote>
+<p><strong>round</strong> : int</p>
+<blockquote>
+<div><p>The number of decimal places to round to in the output json</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Nothing</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="urbansim_defaults.utils.SimulationSummaryData.write_parcel_output">
+<tt class="descname">write_parcel_output</tt><big>(</big><em>add_xy=None</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#SimulationSummaryData.write_parcel_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.SimulationSummaryData.write_parcel_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the parcel-level output to a csv file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>add_xy</strong> : dictionary (optional)</p>
+<blockquote>
+<div><p>Used to add x, y values to the output - an example dictionary is
+pasted below - the parameters should be fairly self explanatory.
+Note that from_epsg and to_epsg can be omitted in which case the
+coordinate system is not changed.  NOTE: pyproj is required
+if changing coordinate systems:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
+    <span class="s">&quot;xy_table&quot;</span><span class="p">:</span> <span class="s">&quot;parcels&quot;</span><span class="p">,</span>
+    <span class="s">&quot;foreign_key&quot;</span><span class="p">:</span> <span class="s">&quot;parcel_id&quot;</span><span class="p">,</span>
+    <span class="s">&quot;x_col&quot;</span><span class="p">:</span> <span class="s">&quot;x&quot;</span><span class="p">,</span>
+    <span class="s">&quot;y_col&quot;</span><span class="p">:</span> <span class="s">&quot;y&quot;</span><span class="p">,</span>
+    <span class="s">&quot;from_epsg&quot;</span><span class="p">:</span> <span class="mi">3740</span><span class="p">,</span>
+    <span class="s">&quot;to_epsg&quot;</span><span class="p">:</span> <span class="mi">4326</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Nothing</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="urbansim_defaults.utils.SimulationSummaryData.write_zone_output">
+<tt class="descname">write_zone_output</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#SimulationSummaryData.write_zone_output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.SimulationSummaryData.write_zone_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write the zone-level output to a file.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.check_nas">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">check_nas</tt><big>(</big><em>df</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#check_nas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.check_nas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks for nas and errors if they are found (also prints a report on how
+many nas are found in each column)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>df</strong> : DataFrame</p>
+<blockquote>
+<div><p>DataFrame to check for nas</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Nothing</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.conditional_upzone">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">conditional_upzone</tt><big>(</big><em>scenario</em>, <em>scenario_inputs</em>, <em>attr_name</em>, <em>upzone_name</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#conditional_upzone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.conditional_upzone" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>scenario</strong> : str</p>
+<blockquote>
+<div><p>The name of the active scenario (set to &#8220;baseline&#8221; if no scenario
+zoning)</p>
+</div></blockquote>
+<p><strong>scenario_inputs</strong> : dict</p>
+<blockquote>
+<div><p>Dictionary of scenario options - keys are scenario names and values
+are also dictionaries of key-value paris for scenario inputs.  Right
+now &#8220;zoning_table_name&#8221; should be set to the table that contains the
+scenario based zoning for that scenario</p>
+</div></blockquote>
+<p><strong>attr_name</strong> : str</p>
+<blockquote>
+<div><p>The name of the attribute in the baseline zoning table</p>
+</div></blockquote>
+<p><strong>upzone_name</strong> : str</p>
+<blockquote>
+<div><p>The name of the attribute in the scenario zoning table</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The new zoning per parcel which is increased if the scenario based</p>
+<p class="last">zoning is higher than the baseline zoning</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.enable_logging">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">enable_logging</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#enable_logging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.enable_logging" title="Permalink to this definition">¶</a></dt>
+<dd><p>A quick shortcut to enable logging at log level INFO</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.full_transition">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">full_transition</tt><big>(</big><em>agents</em>, <em>agent_controls</em>, <em>year</em>, <em>settings</em>, <em>location_fname</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#full_transition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.full_transition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a transition model based on control totals specified in the usual
+UrbanSim way</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>agents</strong> : DataFrameWrapper</p>
+<blockquote>
+<div><p>Table to be transitioned</p>
+</div></blockquote>
+<p><strong>agent_controls</strong> : DataFrameWrapper</p>
+<blockquote>
+<div><p>Table of control totals</p>
+</div></blockquote>
+<p><strong>year</strong> : int</p>
+<blockquote>
+<div><p>The year, which will index into the controls</p>
+</div></blockquote>
+<p><strong>settings</strong> : dict</p>
+<blockquote>
+<div><p>Contains the configuration for the transition model - is specified
+down to the yaml level with a &#8220;total_column&#8221; which specifies the
+control total and an &#8220;add_columns&#8221; param which specified which
+columns to add when calling to_frame (should be a list of the columns
+needed to do the transition</p>
+</div></blockquote>
+<p><strong>location_fname</strong> : str</p>
+<blockquote>
+<div><p>The field name in the resulting dataframe to set to -1 (to unplace
+new agents)</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Nothing</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.hedonic_estimate">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">hedonic_estimate</tt><big>(</big><em>cfg</em>, <em>tbl</em>, <em>join_tbls</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#hedonic_estimate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.hedonic_estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the hedonic model for the specified table</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cfg</strong> : string</p>
+<blockquote>
+<div><p>The name of the yaml config file from which to read the hedonic model</p>
+</div></blockquote>
+<p><strong>tbl</strong> : DataFrameWrapper</p>
+<blockquote>
+<div><p>A dataframe for which to estimate the hedonic</p>
+</div></blockquote>
+<p><strong>join_tbls</strong> : list of strings</p>
+<blockquote class="last">
+<div><p>A list of land use dataframes to give neighborhood info around the
+buildings - will be joined to the buildings using existing broadcasts</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.hedonic_simulate">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">hedonic_simulate</tt><big>(</big><em>cfg</em>, <em>tbl</em>, <em>join_tbls</em>, <em>out_fname</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#hedonic_simulate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.hedonic_simulate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulate the hedonic model for the specified table</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cfg</strong> : string</p>
+<blockquote>
+<div><p>The name of the yaml config file from which to read the hedonic model</p>
+</div></blockquote>
+<p><strong>tbl</strong> : DataFrameWrapper</p>
+<blockquote>
+<div><p>A dataframe for which to estimate the hedonic</p>
+</div></blockquote>
+<p><strong>join_tbls</strong> : list of strings</p>
+<blockquote>
+<div><p>A list of land use dataframes to give neighborhood info around the
+buildings - will be joined to the buildings using existing broadcasts</p>
+</div></blockquote>
+<p><strong>out_fname</strong> : string</p>
+<blockquote class="last">
+<div><p>The output field name (should be present in tbl) to which to write
+the resulting column to</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.lcm_estimate">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">lcm_estimate</tt><big>(</big><em>cfg</em>, <em>choosers</em>, <em>chosen_fname</em>, <em>buildings</em>, <em>join_tbls</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#lcm_estimate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.lcm_estimate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Estimate the location choices for the specified choosers</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cfg</strong> : string</p>
+<blockquote>
+<div><p>The name of the yaml config file from which to read the location
+choice model</p>
+</div></blockquote>
+<p><strong>choosers</strong> : DataFrameWrapper</p>
+<blockquote>
+<div><p>A dataframe of agents doing the choosing</p>
+</div></blockquote>
+<p><strong>chosen_fname</strong> : str</p>
+<blockquote>
+<div><p>The name of the column (present in choosers) which contains the ids
+that identify the chosen alternatives</p>
+</div></blockquote>
+<p><strong>buildings</strong> : DataFrameWrapper</p>
+<blockquote>
+<div><p>A dataframe of buildings which the choosers are locating in and which
+have a supply.</p>
+</div></blockquote>
+<p><strong>join_tbls</strong> : list of strings</p>
+<blockquote class="last">
+<div><p>A list of land use dataframes to give neighborhood info around the
+buildings - will be joined to the buildings using existing broadcasts</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.lcm_simulate">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">lcm_simulate</tt><big>(</big><em>cfg</em>, <em>choosers</em>, <em>buildings</em>, <em>join_tbls</em>, <em>out_fname</em>, <em>supply_fname</em>, <em>vacant_fname</em>, <em>enable_supply_correction=None</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#lcm_simulate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.lcm_simulate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulate the location choices for the specified choosers</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cfg</strong> : string</p>
+<blockquote>
+<div><p>The name of the yaml config file from which to read the location
+choice model</p>
+</div></blockquote>
+<p><strong>choosers</strong> : DataFrameWrapper</p>
+<blockquote>
+<div><p>A dataframe of agents doing the choosing</p>
+</div></blockquote>
+<p><strong>buildings</strong> : DataFrameWrapper</p>
+<blockquote>
+<div><p>A dataframe of buildings which the choosers are locating in and which
+have a supply</p>
+</div></blockquote>
+<p><strong>join_tbls</strong> : list of strings</p>
+<blockquote>
+<div><p>A list of land use dataframes to give neighborhood info around the
+buildings - will be joined to the buildings using existing broadcasts.</p>
+</div></blockquote>
+<p><strong>out_fname</strong> : string</p>
+<blockquote>
+<div><p>The column name to write the simulated location to</p>
+</div></blockquote>
+<p><strong>supply_fname</strong> : string</p>
+<blockquote>
+<div><p>The string in the buildings table that indicates the amount of
+available units there are for choosers, vacant or not</p>
+</div></blockquote>
+<p><strong>vacant_fname</strong> : string</p>
+<blockquote>
+<div><p>The string in the buildings table that indicates the amount of vacant
+units there will be for choosers</p>
+</div></blockquote>
+<p><strong>enable_supply_correction</strong> : Python dict</p>
+<blockquote class="last">
+<div><p>Should contain keys &#8220;price_col&#8221; and &#8220;submarket_col&#8221; which are set to
+the column names in buildings which contain the column for prices and
+an identifier which segments buildings into submarkets</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.run_developer">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">run_developer</tt><big>(</big><em>forms, agents, buildings, supply_fname, parcel_size, ave_unit_size, total_units, feasibility, year=None, target_vacancy=0.1, form_to_btype_callback=None, add_more_columns_callback=None, max_parcel_size=2000000, residential=True, bldg_sqft_per_job=400.0, min_unit_size=400, remove_developed_buildings=True, unplace_agents=['households', 'jobs']</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#run_developer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.run_developer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the developer model to pick and build buildings</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>forms</strong> : string or list of strings</p>
+<blockquote>
+<div><p>Passed directly dev.pick</p>
+</div></blockquote>
+<p><strong>agents</strong> : DataFrame Wrapper</p>
+<blockquote>
+<div><p>Used to compute the current demand for units/floorspace in the area</p>
+</div></blockquote>
+<p><strong>buildings</strong> : DataFrame Wrapper</p>
+<blockquote>
+<div><p>Used to compute the current supply of units/floorspace in the area</p>
+</div></blockquote>
+<p><strong>supply_fname</strong> : string</p>
+<blockquote>
+<div><p>Identifies the column in buildings which indicates the supply of
+units/floorspace</p>
+</div></blockquote>
+<p><strong>parcel_size</strong> : Series</p>
+<blockquote>
+<div><p>Passed directly to dev.pick</p>
+</div></blockquote>
+<p><strong>ave_unit_size</strong> : Series</p>
+<blockquote>
+<div><p>Passed directly to dev.pick - average residential unit size</p>
+</div></blockquote>
+<p><strong>total_units</strong> : Series</p>
+<blockquote>
+<div><p>Passed directly to dev.pick - total current residential_units /
+job_spaces</p>
+</div></blockquote>
+<p><strong>feasibility</strong> : DataFrame Wrapper</p>
+<blockquote>
+<div><p>The output from feasibility above (the table called &#8216;feasibility&#8217;)</p>
+</div></blockquote>
+<p><strong>year</strong> : int</p>
+<blockquote>
+<div><p>The year of the simulation - will be assigned to &#8216;year_built&#8217; on the
+new buildings</p>
+</div></blockquote>
+<p><strong>target_vacancy</strong> : float</p>
+<blockquote>
+<div><p>The target vacancy rate - used to determine how much to build</p>
+</div></blockquote>
+<p><strong>form_to_btype_callback</strong> : function</p>
+<blockquote>
+<div><p>Will be used to convert the &#8216;forms&#8217; in the pro forma to
+&#8216;building_type_id&#8217; in the larger model</p>
+</div></blockquote>
+<p><strong>add_more_columns_callback</strong> : function</p>
+<blockquote>
+<div><p>Takes a dataframe and returns a dataframe - is used to make custom
+modifications to the new buildings that get added</p>
+</div></blockquote>
+<p><strong>max_parcel_size</strong> : float</p>
+<blockquote>
+<div><p>Passed directly to dev.pick - max parcel size to consider</p>
+</div></blockquote>
+<p><strong>min_unit_size</strong> : float</p>
+<blockquote>
+<div><p>Passed directly to dev.pick - min unit size that is valid</p>
+</div></blockquote>
+<p><strong>residential</strong> : boolean</p>
+<blockquote>
+<div><p>Passed directly to dev.pick - switches between adding/computing
+residential_units and job_spaces</p>
+</div></blockquote>
+<p><strong>bldg_sqft_per_job</strong> : float</p>
+<blockquote>
+<div><p>Passed directly to dev.pick - specified the multiplier between
+floor spaces and job spaces for this form (does not vary by parcel
+as ave_unit_size does)</p>
+</div></blockquote>
+<p><strong>remove_redeveloped_buildings</strong> : optional, boolean (default True)</p>
+<blockquote>
+<div><p>Remove all buildings on the parcels which are being developed on</p>
+</div></blockquote>
+<p><strong>unplace_agents</strong> : optional</p>
+<blockquote>
+<div><p>For all tables in the list, will look for field building_id and set
+it to -1 for buildings which are removed - only executed if
+remove_developed_buildings is true</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Writes the result back to the buildings table and returns the new</p>
+<p class="last">buildings with available debugging information on each new building</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.run_feasibility">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">run_feasibility</tt><big>(</big><em>parcels</em>, <em>parcel_price_callback</em>, <em>parcel_use_allowed_callback</em>, <em>residential_to_yearly=True</em>, <em>parcel_filter=None</em>, <em>config=None</em>, <em>pass_through=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#run_feasibility"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.run_feasibility" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute development feasibility on all parcels</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>parcels</strong> : DataFrame Wrapper</p>
+<blockquote>
+<div><p>The data frame wrapper for the parcel data</p>
+</div></blockquote>
+<p><strong>parcel_price_callback</strong> : function</p>
+<blockquote>
+<div><p>A callback which takes each use of the pro forma and returns a series
+with index as parcel_id and value as yearly_rent</p>
+</div></blockquote>
+<p><strong>parcel_use_allowed_callback</strong> : function</p>
+<blockquote>
+<div><p>A callback which takes each form of the pro forma and returns a series
+with index as parcel_id and value and boolean whether the form
+is allowed on the parcel</p>
+</div></blockquote>
+<p><strong>residential_to_yearly</strong> : boolean (default true)</p>
+<blockquote>
+<div><p>Whether to use the cap rate to convert the residential price from total
+sales price per sqft to rent per sqft</p>
+</div></blockquote>
+<p><strong>parcel_filter</strong> : string</p>
+<blockquote>
+<div><p>A filter to apply to the parcels data frame to remove parcels from
+consideration - is typically used to remove parcels with buildings
+older than a certain date for historical preservation, but is
+generally useful</p>
+</div></blockquote>
+<p><strong>config</strong> : SqFtProFormaConfig configuration object.  Optional.  Defaults to</p>
+<blockquote>
+<div><p>None</p>
+</div></blockquote>
+<p><strong>pass_through</strong> : list of strings</p>
+<blockquote>
+<div><p>Will be passed to the feasibility lookup function - is used to pass
+variables from the parcel dataframe to the output dataframe, usually
+for debugging</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Adds a table called feasibility to the sim object (returns nothing)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.simple_relocation">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">simple_relocation</tt><big>(</big><em>choosers</em>, <em>relocation_rate</em>, <em>fieldname</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#simple_relocation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.simple_relocation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a simple rate based relocation model</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>tbl</strong> : DataFrameWrapper or DataFrame</p>
+<blockquote>
+<div><p>Table of agents that might relocate</p>
+</div></blockquote>
+<p><strong>rate</strong> : float</p>
+<blockquote>
+<div><p>Rate of relocation</p>
+</div></blockquote>
+<p><strong>location_fname</strong> : str</p>
+<blockquote>
+<div><p>The field name in the resulting dataframe to set to -1 (to unplace
+new agents)</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Nothing</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.simple_transition">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">simple_transition</tt><big>(</big><em>tbl</em>, <em>rate</em>, <em>location_fname</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#simple_transition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.simple_transition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run a simple growth rate transition model on the table passed in</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>tbl</strong> : DataFrameWrapper</p>
+<blockquote>
+<div><p>Table to be transitioned</p>
+</div></blockquote>
+<p><strong>rate</strong> : float</p>
+<blockquote>
+<div><p>Growth rate</p>
+</div></blockquote>
+<p><strong>location_fname</strong> : str</p>
+<blockquote>
+<div><p>The field name in the resulting dataframe to set to -1 (to unplace
+new agents)</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Nothing</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.table_reprocess">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">table_reprocess</tt><big>(</big><em>cfg</em>, <em>df</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#table_reprocess"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.table_reprocess" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reprocesses a table with the given configuration, mainly by filling nas
+with the given configuration.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cfg</strong> : dict</p>
+<blockquote>
+<div><p>The configuration is specified as a nested dictionary, javascript
+style, and a simple config is given below.  Most parameters should be
+fairly self-explanatory.  &#8220;filter&#8221; filters the dataframe using the
+query command in Pandas.  The &#8220;fill_nas&#8221; parameter is another
+dictionary which takes each column and specifies how to fill nas -
+options include &#8220;drop&#8221;, &#8220;zero&#8221;, &#8220;median&#8221;, &#8220;mode&#8221;, and &#8220;mean&#8221;.  The
+&#8220;type&#8221; must also be specified since items like &#8220;median&#8221; usually
+return floats but the result is often desired to be an &#8220;int&#8221; - the
+type is thus specified to avoid ambiguity.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
+    <span class="s">&quot;filter&quot;</span><span class="p">:</span> <span class="s">&quot;building_type_id &gt;= 1 and building_type_id &lt;= 14&quot;</span><span class="p">,</span>
+    <span class="s">&quot;fill_nas&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&quot;building_type_id&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&quot;how&quot;</span><span class="p">:</span> <span class="s">&quot;drop&quot;</span><span class="p">,</span>
+            <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;int&quot;</span>
+        <span class="p">},</span>
+        <span class="s">&quot;residential_units&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&quot;how&quot;</span><span class="p">:</span> <span class="s">&quot;zero&quot;</span><span class="p">,</span>
+            <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;int&quot;</span>
+        <span class="p">},</span>
+        <span class="s">&quot;year_built&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&quot;how&quot;</span><span class="p">:</span> <span class="s">&quot;median&quot;</span><span class="p">,</span>
+            <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;int&quot;</span>
+        <span class="p">},</span>
+        <span class="s">&quot;building_type_id&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&quot;how&quot;</span><span class="p">:</span> <span class="s">&quot;mode&quot;</span><span class="p">,</span>
+            <span class="s">&quot;type&quot;</span><span class="p">:</span> <span class="s">&quot;int&quot;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><strong>df</strong> : DataFrame to process</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">New DataFrame which is reprocessed according the configuration</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.to_frame">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">to_frame</tt><big>(</big><em>tbl</em>, <em>join_tbls</em>, <em>cfg</em>, <em>additional_columns=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#to_frame"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.to_frame" title="Permalink to this definition">¶</a></dt>
+<dd><p>Leverage all the built in functionality of the sim framework to join to
+the specified tables, only accessing the columns used in cfg (the model
+yaml configuration file), an any additionally passed columns (the sim
+framework is smart enough to figure out which table to grab the column
+off of)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>tbl</strong> : DataFrameWrapper</p>
+<blockquote>
+<div><p>The table to join other tables to</p>
+</div></blockquote>
+<p><strong>join_tbls</strong> : list of DataFrameWrappers or strs</p>
+<blockquote>
+<div><p>A list of tables to join to &#8220;tbl&#8221;</p>
+</div></blockquote>
+<p><strong>cfg</strong> : str</p>
+<blockquote>
+<div><p>The filename of a yaml configuration file from which to parse the
+strings which are actually used by the model</p>
+</div></blockquote>
+<p><strong>additional_columns</strong> : list of strs</p>
+<blockquote>
+<div><p>A list of additional columns to include</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">A single DataFrame with the index from tbl and the columns used by cfg</p>
+<p class="last">and any additional columns specified</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="urbansim_defaults.utils.yaml_to_class">
+<tt class="descclassname">urbansim_defaults.utils.</tt><tt class="descname">yaml_to_class</tt><big>(</big><em>cfg</em><big>)</big><a class="reference internal" href="_modules/urbansim_defaults/utils.html#yaml_to_class"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#urbansim_defaults.utils.yaml_to_class" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the name of a yaml file and get the Python class of the model
+associated with the configuratoin</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cfg</strong> : str</p>
+<blockquote>
+<div><p>The name of the yaml configuration file</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Nothing</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="index">
+<h2>Index<a class="headerlink" href="#index" title="Permalink to this headline">¶</a></h2>
+<p>Use this index <a class="reference internal" href="genindex.html"><em>Index</em></a> to lookup methods by name.</p>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Synthicity.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1dev',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

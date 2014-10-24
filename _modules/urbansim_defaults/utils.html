@@ -1,0 +1,1094 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>urbansim_defaults.utils &mdash; urbansim_defaults 0.1dev documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="urbansim_defaults 0.1dev documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="../../index.html" class="fa fa-home"> urbansim_defaults</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <!-- Local TOC -->
+            <div class="local-toc"></div>
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">urbansim_defaults</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>urbansim_defaults.utils</li>
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <h1>Source code for urbansim_defaults.utils</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">urbansim.models</span> <span class="kn">import</span> <span class="n">RegressionModel</span><span class="p">,</span> <span class="n">SegmentedRegressionModel</span><span class="p">,</span> \
+    <span class="n">MNLLocationChoiceModel</span><span class="p">,</span> <span class="n">SegmentedMNLLocationChoiceModel</span><span class="p">,</span> \
+    <span class="n">GrowthRateTransition</span><span class="p">,</span> <span class="n">transition</span>
+<span class="kn">from</span> <span class="nn">urbansim.models.supplydemand</span> <span class="kn">import</span> <span class="n">supply_and_demand</span>
+<span class="kn">from</span> <span class="nn">urbansim.developer</span> <span class="kn">import</span> <span class="n">sqftproforma</span><span class="p">,</span> <span class="n">developer</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">urbansim.sim.simulation</span> <span class="kn">as</span> <span class="nn">sim</span>
+<span class="kn">from</span> <span class="nn">urbansim.utils</span> <span class="kn">import</span> <span class="n">misc</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+
+<div class="viewcode-block" id="conditional_upzone"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.conditional_upzone">[docs]</a><span class="k">def</span> <span class="nf">conditional_upzone</span><span class="p">(</span><span class="n">scenario</span><span class="p">,</span> <span class="n">scenario_inputs</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="n">upzone_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    scenario : str</span>
+<span class="sd">        The name of the active scenario (set to &quot;baseline&quot; if no scenario</span>
+<span class="sd">        zoning)</span>
+<span class="sd">    scenario_inputs : dict</span>
+<span class="sd">        Dictionary of scenario options - keys are scenario names and values</span>
+<span class="sd">        are also dictionaries of key-value paris for scenario inputs.  Right</span>
+<span class="sd">        now &quot;zoning_table_name&quot; should be set to the table that contains the</span>
+<span class="sd">        scenario based zoning for that scenario</span>
+<span class="sd">    attr_name : str</span>
+<span class="sd">        The name of the attribute in the baseline zoning table</span>
+<span class="sd">    upzone_name : str</span>
+<span class="sd">        The name of the attribute in the scenario zoning table</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    The new zoning per parcel which is increased if the scenario based</span>
+<span class="sd">    zoning is higher than the baseline zoning</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">zoning_baseline</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_table</span><span class="p">(</span>
+        <span class="n">scenario_inputs</span><span class="p">[</span><span class="s">&quot;baseline&quot;</span><span class="p">][</span><span class="s">&quot;zoning_table_name&quot;</span><span class="p">])</span>
+    <span class="n">attr</span> <span class="o">=</span> <span class="n">zoning_baseline</span><span class="p">[</span><span class="n">attr_name</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">scenario</span> <span class="o">!=</span> <span class="s">&quot;baseline&quot;</span><span class="p">:</span>
+        <span class="n">zoning_scenario</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_table</span><span class="p">(</span>
+            <span class="n">scenario_inputs</span><span class="p">[</span><span class="n">scenario</span><span class="p">][</span><span class="s">&quot;zoning_table_name&quot;</span><span class="p">])</span>
+        <span class="n">upzone</span> <span class="o">=</span> <span class="n">zoning_scenario</span><span class="p">[</span><span class="n">upzone_name</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">attr</span><span class="p">,</span> <span class="n">upzone</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">skipna</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">attr</span>
+
+</div>
+<div class="viewcode-block" id="enable_logging"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.enable_logging">[docs]</a><span class="k">def</span> <span class="nf">enable_logging</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A quick shortcut to enable logging at log level INFO</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">urbansim.utils</span> <span class="kn">import</span> <span class="n">logutil</span>
+    <span class="n">logutil</span><span class="o">.</span><span class="n">set_log_level</span><span class="p">(</span><span class="n">logutil</span><span class="o">.</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
+    <span class="n">logutil</span><span class="o">.</span><span class="n">log_to_stream</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="check_nas"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.check_nas">[docs]</a><span class="k">def</span> <span class="nf">check_nas</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Checks for nas and errors if they are found (also prints a report on how</span>
+<span class="sd">    many nas are found in each column)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    df : DataFrame</span>
+<span class="sd">        DataFrame to check for nas</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Nothing</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df_cnt</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">fail</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">replace</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">s_cnt</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">df_cnt</span> <span class="o">!=</span> <span class="n">s_cnt</span><span class="p">:</span>
+            <span class="n">fail</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">print</span> <span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> nas or inf (out of </span><span class="si">%d</span><span class="s">) in column </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> \
+                  <span class="p">(</span><span class="n">df_cnt</span><span class="o">-</span><span class="n">s_cnt</span><span class="p">,</span> <span class="n">df_cnt</span><span class="p">,</span> <span class="n">col</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">fail</span><span class="p">,</span> <span class="s">&quot;NAs were found in dataframe, please fix&quot;</span>
+
+</div>
+<div class="viewcode-block" id="table_reprocess"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.table_reprocess">[docs]</a><span class="k">def</span> <span class="nf">table_reprocess</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reprocesses a table with the given configuration, mainly by filling nas</span>
+<span class="sd">    with the given configuration.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cfg : dict</span>
+<span class="sd">        The configuration is specified as a nested dictionary, javascript</span>
+<span class="sd">        style, and a simple config is given below.  Most parameters should be</span>
+<span class="sd">        fairly self-explanatory.  &quot;filter&quot; filters the dataframe using the</span>
+<span class="sd">        query command in Pandas.  The &quot;fill_nas&quot; parameter is another</span>
+<span class="sd">        dictionary which takes each column and specifies how to fill nas -</span>
+<span class="sd">        options include &quot;drop&quot;, &quot;zero&quot;, &quot;median&quot;, &quot;mode&quot;, and &quot;mean&quot;.  The</span>
+<span class="sd">        &quot;type&quot; must also be specified since items like &quot;median&quot; usually</span>
+<span class="sd">        return floats but the result is often desired to be an &quot;int&quot; - the</span>
+<span class="sd">        type is thus specified to avoid ambiguity.::</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;filter&quot;: &quot;building_type_id &gt;= 1 and building_type_id &lt;= 14&quot;,</span>
+<span class="sd">                &quot;fill_nas&quot;: {</span>
+<span class="sd">                    &quot;building_type_id&quot;: {</span>
+<span class="sd">                        &quot;how&quot;: &quot;drop&quot;,</span>
+<span class="sd">                        &quot;type&quot;: &quot;int&quot;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &quot;residential_units&quot;: {</span>
+<span class="sd">                        &quot;how&quot;: &quot;zero&quot;,</span>
+<span class="sd">                        &quot;type&quot;: &quot;int&quot;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &quot;year_built&quot;: {</span>
+<span class="sd">                        &quot;how&quot;: &quot;median&quot;,</span>
+<span class="sd">                        &quot;type&quot;: &quot;int&quot;</span>
+<span class="sd">                    },</span>
+<span class="sd">                    &quot;building_type_id&quot;: {</span>
+<span class="sd">                        &quot;how&quot;: &quot;mode&quot;,</span>
+<span class="sd">                        &quot;type&quot;: &quot;int&quot;</span>
+<span class="sd">                    }</span>
+<span class="sd">                }</span>
+<span class="sd">            }</span>
+
+<span class="sd">    df : DataFrame to process</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    New DataFrame which is reprocessed according the configuration</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df_cnt</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s">&quot;filter&quot;</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">cfg</span><span class="p">[</span><span class="s">&quot;filter&quot;</span><span class="p">])</span>
+
+    <span class="k">assert</span> <span class="s">&quot;fill_nas&quot;</span> <span class="ow">in</span> <span class="n">cfg</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="s">&quot;fill_nas&quot;</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">:</span>
+        <span class="n">filltyp</span><span class="p">,</span> <span class="n">dtyp</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="n">fname</span><span class="p">][</span><span class="s">&quot;how&quot;</span><span class="p">],</span> <span class="n">cfg</span><span class="p">[</span><span class="n">fname</span><span class="p">][</span><span class="s">&quot;type&quot;</span><span class="p">]</span>
+        <span class="n">s_cnt</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">fname</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+        <span class="n">fill_cnt</span> <span class="o">=</span> <span class="n">df_cnt</span> <span class="o">-</span> <span class="n">s_cnt</span>
+        <span class="k">if</span> <span class="n">filltyp</span> <span class="o">==</span> <span class="s">&quot;zero&quot;</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">elif</span> <span class="n">filltyp</span> <span class="o">==</span> <span class="s">&quot;mode&quot;</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">fname</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">filltyp</span> <span class="o">==</span> <span class="s">&quot;median&quot;</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">fname</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">quantile</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">filltyp</span> <span class="o">==</span> <span class="s">&quot;mean&quot;</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">fname</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">filltyp</span> <span class="o">==</span> <span class="s">&quot;drop&quot;</span><span class="p">:</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="n">fname</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Fill type not found!&quot;</span>
+        <span class="k">print</span> <span class="s">&quot;Filling column {} with value {} ({} values)&quot;</span><span class="o">.</span>\
+            <span class="n">format</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">fill_cnt</span><span class="p">)</span>
+        <span class="n">df</span><span class="p">[</span><span class="n">fname</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">fname</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtyp</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span>
+
+</div>
+<div class="viewcode-block" id="to_frame"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.to_frame">[docs]</a><span class="k">def</span> <span class="nf">to_frame</span><span class="p">(</span><span class="n">tbl</span><span class="p">,</span> <span class="n">join_tbls</span><span class="p">,</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">additional_columns</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Leverage all the built in functionality of the sim framework to join to</span>
+<span class="sd">    the specified tables, only accessing the columns used in cfg (the model</span>
+<span class="sd">    yaml configuration file), an any additionally passed columns (the sim</span>
+<span class="sd">    framework is smart enough to figure out which table to grab the column</span>
+<span class="sd">    off of)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tbl : DataFrameWrapper</span>
+<span class="sd">        The table to join other tables to</span>
+<span class="sd">    join_tbls : list of DataFrameWrappers or strs</span>
+<span class="sd">        A list of tables to join to &quot;tbl&quot;</span>
+<span class="sd">    cfg : str</span>
+<span class="sd">        The filename of a yaml configuration file from which to parse the</span>
+<span class="sd">        strings which are actually used by the model</span>
+<span class="sd">    additional_columns : list of strs</span>
+<span class="sd">        A list of additional columns to include</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    A single DataFrame with the index from tbl and the columns used by cfg</span>
+<span class="sd">    and any additional columns specified</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">join_tbls</span> <span class="o">=</span> <span class="n">join_tbls</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">join_tbls</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">join_tbls</span><span class="p">]</span>
+    <span class="n">tables</span> <span class="o">=</span> <span class="p">[</span><span class="n">tbl</span><span class="p">]</span> <span class="o">+</span> <span class="n">join_tbls</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">yaml_to_class</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span><span class="o">.</span><span class="n">from_yaml</span><span class="p">(</span><span class="n">str_or_buffer</span><span class="o">=</span><span class="n">cfg</span><span class="p">)</span>
+    <span class="n">tables</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tables</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">]</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">column_list</span><span class="p">(</span><span class="n">tables</span><span class="p">,</span> <span class="n">cfg</span><span class="o">.</span><span class="n">columns_used</span><span class="p">())</span> <span class="o">+</span> <span class="n">additional_columns</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">merge_tables</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">tables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                              <span class="n">tables</span><span class="o">=</span><span class="n">tables</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">tables</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span>
+    <span class="n">check_nas</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">df</span>
+
+</div>
+<div class="viewcode-block" id="yaml_to_class"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.yaml_to_class">[docs]</a><span class="k">def</span> <span class="nf">yaml_to_class</span><span class="p">(</span><span class="n">cfg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert the name of a yaml file and get the Python class of the model</span>
+<span class="sd">    associated with the configuratoin</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cfg : str</span>
+<span class="sd">        The name of the yaml configuration file</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Nothing</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">yaml</span>
+    <span class="n">model_type</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">cfg</span><span class="p">))[</span><span class="s">&quot;model_type&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s">&quot;regression&quot;</span><span class="p">:</span> <span class="n">RegressionModel</span><span class="p">,</span>
+        <span class="s">&quot;segmented_regression&quot;</span><span class="p">:</span> <span class="n">SegmentedRegressionModel</span><span class="p">,</span>
+        <span class="s">&quot;locationchoice&quot;</span><span class="p">:</span> <span class="n">MNLLocationChoiceModel</span><span class="p">,</span>
+        <span class="s">&quot;segmented_locationchoice&quot;</span><span class="p">:</span> <span class="n">SegmentedMNLLocationChoiceModel</span>
+    <span class="p">}[</span><span class="n">model_type</span><span class="p">]</span>
+
+</div>
+<div class="viewcode-block" id="hedonic_estimate"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.hedonic_estimate">[docs]</a><span class="k">def</span> <span class="nf">hedonic_estimate</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">tbl</span><span class="p">,</span> <span class="n">join_tbls</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate the hedonic model for the specified table</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cfg : string</span>
+<span class="sd">        The name of the yaml config file from which to read the hedonic model</span>
+<span class="sd">    tbl : DataFrameWrapper</span>
+<span class="sd">        A dataframe for which to estimate the hedonic</span>
+<span class="sd">    join_tbls : list of strings</span>
+<span class="sd">        A list of land use dataframes to give neighborhood info around the</span>
+<span class="sd">        buildings - will be joined to the buildings using existing broadcasts</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">to_frame</span><span class="p">(</span><span class="n">tbl</span><span class="p">,</span> <span class="n">join_tbls</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">yaml_to_class</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span><span class="o">.</span><span class="n">fit_from_cfg</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="hedonic_simulate"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.hedonic_simulate">[docs]</a><span class="k">def</span> <span class="nf">hedonic_simulate</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">tbl</span><span class="p">,</span> <span class="n">join_tbls</span><span class="p">,</span> <span class="n">out_fname</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simulate the hedonic model for the specified table</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cfg : string</span>
+<span class="sd">        The name of the yaml config file from which to read the hedonic model</span>
+<span class="sd">    tbl : DataFrameWrapper</span>
+<span class="sd">        A dataframe for which to estimate the hedonic</span>
+<span class="sd">    join_tbls : list of strings</span>
+<span class="sd">        A list of land use dataframes to give neighborhood info around the</span>
+<span class="sd">        buildings - will be joined to the buildings using existing broadcasts</span>
+<span class="sd">    out_fname : string</span>
+<span class="sd">        The output field name (should be present in tbl) to which to write</span>
+<span class="sd">        the resulting column to</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">to_frame</span><span class="p">(</span><span class="n">tbl</span><span class="p">,</span> <span class="n">join_tbls</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+    <span class="n">price_or_rent</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">yaml_to_class</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span><span class="o">.</span><span class="n">predict_from_cfg</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+    <span class="n">tbl</span><span class="o">.</span><span class="n">update_col_from_series</span><span class="p">(</span><span class="n">out_fname</span><span class="p">,</span> <span class="n">price_or_rent</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="lcm_estimate"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.lcm_estimate">[docs]</a><span class="k">def</span> <span class="nf">lcm_estimate</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">choosers</span><span class="p">,</span> <span class="n">chosen_fname</span><span class="p">,</span> <span class="n">buildings</span><span class="p">,</span> <span class="n">join_tbls</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate the location choices for the specified choosers</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cfg : string</span>
+<span class="sd">        The name of the yaml config file from which to read the location</span>
+<span class="sd">        choice model</span>
+<span class="sd">    choosers : DataFrameWrapper</span>
+<span class="sd">        A dataframe of agents doing the choosing</span>
+<span class="sd">    chosen_fname : str</span>
+<span class="sd">        The name of the column (present in choosers) which contains the ids</span>
+<span class="sd">        that identify the chosen alternatives</span>
+<span class="sd">    buildings : DataFrameWrapper</span>
+<span class="sd">        A dataframe of buildings which the choosers are locating in and which</span>
+<span class="sd">        have a supply.</span>
+<span class="sd">    join_tbls : list of strings</span>
+<span class="sd">        A list of land use dataframes to give neighborhood info around the</span>
+<span class="sd">        buildings - will be joined to the buildings using existing broadcasts</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+    <span class="n">choosers</span> <span class="o">=</span> <span class="n">to_frame</span><span class="p">(</span><span class="n">choosers</span><span class="p">,</span> <span class="p">[],</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">additional_columns</span><span class="o">=</span><span class="p">[</span><span class="n">chosen_fname</span><span class="p">])</span>
+    <span class="n">alternatives</span> <span class="o">=</span> <span class="n">to_frame</span><span class="p">(</span><span class="n">buildings</span><span class="p">,</span> <span class="n">join_tbls</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">yaml_to_class</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span><span class="o">.</span><span class="n">fit_from_cfg</span><span class="p">(</span><span class="n">choosers</span><span class="p">,</span>
+                                           <span class="n">chosen_fname</span><span class="p">,</span>
+                                           <span class="n">alternatives</span><span class="p">,</span>
+                                           <span class="n">cfg</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="lcm_simulate"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.lcm_simulate">[docs]</a><span class="k">def</span> <span class="nf">lcm_simulate</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">choosers</span><span class="p">,</span> <span class="n">buildings</span><span class="p">,</span> <span class="n">join_tbls</span><span class="p">,</span> <span class="n">out_fname</span><span class="p">,</span>
+                 <span class="n">supply_fname</span><span class="p">,</span> <span class="n">vacant_fname</span><span class="p">,</span>
+                 <span class="n">enable_supply_correction</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simulate the location choices for the specified choosers</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cfg : string</span>
+<span class="sd">        The name of the yaml config file from which to read the location</span>
+<span class="sd">        choice model</span>
+<span class="sd">    choosers : DataFrameWrapper</span>
+<span class="sd">        A dataframe of agents doing the choosing</span>
+<span class="sd">    buildings : DataFrameWrapper</span>
+<span class="sd">        A dataframe of buildings which the choosers are locating in and which</span>
+<span class="sd">        have a supply</span>
+<span class="sd">    join_tbls : list of strings</span>
+<span class="sd">        A list of land use dataframes to give neighborhood info around the</span>
+<span class="sd">        buildings - will be joined to the buildings using existing broadcasts.</span>
+<span class="sd">    out_fname : string</span>
+<span class="sd">        The column name to write the simulated location to</span>
+<span class="sd">    supply_fname : string</span>
+<span class="sd">        The string in the buildings table that indicates the amount of</span>
+<span class="sd">        available units there are for choosers, vacant or not</span>
+<span class="sd">    vacant_fname : string</span>
+<span class="sd">        The string in the buildings table that indicates the amount of vacant</span>
+<span class="sd">        units there will be for choosers</span>
+<span class="sd">    enable_supply_correction : Python dict</span>
+<span class="sd">        Should contain keys &quot;price_col&quot; and &quot;submarket_col&quot; which are set to</span>
+<span class="sd">        the column names in buildings which contain the column for prices and</span>
+<span class="sd">        an identifier which segments buildings into submarkets</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+
+    <span class="n">choosers_df</span> <span class="o">=</span> <span class="n">to_frame</span><span class="p">(</span><span class="n">choosers</span><span class="p">,</span> <span class="p">[],</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">additional_columns</span><span class="o">=</span><span class="p">[</span><span class="n">out_fname</span><span class="p">])</span>
+
+    <span class="n">additional_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">supply_fname</span><span class="p">,</span> <span class="n">vacant_fname</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">enable_supply_correction</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> \
+            <span class="s">&quot;submarket_col&quot;</span> <span class="ow">in</span> <span class="n">enable_supply_correction</span><span class="p">:</span>
+        <span class="n">additional_columns</span> <span class="o">+=</span> <span class="p">[</span><span class="n">enable_supply_correction</span><span class="p">[</span><span class="s">&quot;submarket_col&quot;</span><span class="p">]]</span>
+    <span class="n">locations_df</span> <span class="o">=</span> <span class="n">to_frame</span><span class="p">(</span><span class="n">buildings</span><span class="p">,</span> <span class="n">join_tbls</span><span class="p">,</span> <span class="n">cfg</span><span class="p">,</span>
+                            <span class="n">additional_columns</span><span class="o">=</span><span class="n">additional_columns</span><span class="p">)</span>
+
+    <span class="n">available_units</span> <span class="o">=</span> <span class="n">buildings</span><span class="p">[</span><span class="n">supply_fname</span><span class="p">]</span>
+    <span class="n">vacant_units</span> <span class="o">=</span> <span class="n">buildings</span><span class="p">[</span><span class="n">vacant_fname</span><span class="p">]</span>
+
+    <span class="k">print</span> <span class="s">&quot;There are </span><span class="si">%d</span><span class="s"> total available units&quot;</span> <span class="o">%</span> <span class="n">available_units</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">print</span> <span class="s">&quot;    and </span><span class="si">%d</span><span class="s"> total choosers&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">choosers</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;    but there are </span><span class="si">%d</span><span class="s"> overfull buildings&quot;</span> <span class="o">%</span> \
+          <span class="nb">len</span><span class="p">(</span><span class="n">vacant_units</span><span class="p">[</span><span class="n">vacant_units</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">vacant_units</span> <span class="o">=</span> <span class="n">vacant_units</span><span class="p">[</span><span class="n">vacant_units</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">units</span> <span class="o">=</span> <span class="n">locations_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">vacant_units</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                             <span class="n">vacant_units</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s">&#39;int&#39;</span><span class="p">))]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+
+    <span class="k">print</span> <span class="s">&quot;    for a total of </span><span class="si">%d</span><span class="s"> temporarily empty units&quot;</span> <span class="o">%</span> <span class="n">vacant_units</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">print</span> <span class="s">&quot;    in </span><span class="si">%d</span><span class="s"> buildings total in the region&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">vacant_units</span><span class="p">)</span>
+
+    <span class="n">movers</span> <span class="o">=</span> <span class="n">choosers_df</span><span class="p">[</span><span class="n">choosers_df</span><span class="p">[</span><span class="n">out_fname</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">print</span> <span class="s">&quot;There are </span><span class="si">%d</span><span class="s"> total movers for this LCM&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">movers</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">enable_supply_correction</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">enable_supply_correction</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="s">&quot;price_col&quot;</span> <span class="ow">in</span> <span class="n">enable_supply_correction</span>
+        <span class="n">price_col</span> <span class="o">=</span> <span class="n">enable_supply_correction</span><span class="p">[</span><span class="s">&quot;price_col&quot;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="s">&quot;submarket_col&quot;</span> <span class="ow">in</span> <span class="n">enable_supply_correction</span>
+        <span class="n">submarket_col</span> <span class="o">=</span> <span class="n">enable_supply_correction</span><span class="p">[</span><span class="s">&quot;submarket_col&quot;</span><span class="p">]</span>
+
+        <span class="n">lcm</span> <span class="o">=</span> <span class="n">yaml_to_class</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span><span class="o">.</span><span class="n">from_yaml</span><span class="p">(</span><span class="n">str_or_buffer</span><span class="o">=</span><span class="n">cfg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">enable_supply_correction</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;warm_start&quot;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+        <span class="n">multiplier_func</span> <span class="o">=</span> <span class="n">enable_supply_correction</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;multiplier_func&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">multiplier_func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">multiplier_func</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_injectable</span><span class="p">(</span><span class="n">multiplier_func</span><span class="p">)</span>
+
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="n">enable_supply_correction</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;kwargs&#39;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">new_prices</span><span class="p">,</span> <span class="n">submarkets_ratios</span> <span class="o">=</span> <span class="n">supply_and_demand</span><span class="p">(</span>
+            <span class="n">lcm</span><span class="p">,</span>
+            <span class="n">movers</span><span class="p">,</span>
+            <span class="n">units</span><span class="p">,</span>
+            <span class="n">submarket_col</span><span class="p">,</span>
+            <span class="n">price_col</span><span class="p">,</span>
+            <span class="n">base_multiplier</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">multiplier_func</span><span class="o">=</span><span class="n">multiplier_func</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c"># we will only get back new prices for those alternatives</span>
+        <span class="c"># that pass the filter - might need to specify the table in </span>
+        <span class="c"># order to get the complete index of possible submarkets</span>
+        <span class="n">submarket_table</span> <span class="o">=</span> <span class="n">enable_supply_correction</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;submarket_table&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">submarket_table</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">submarkets_ratios</span> <span class="o">=</span> <span class="n">submarkets_ratios</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span>
+                <span class="n">sim</span><span class="o">.</span><span class="n">get_table</span><span class="p">(</span><span class="n">submarket_table</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c"># write final shifters to the submarket_table for use in debugging</span>
+            <span class="n">sim</span><span class="o">.</span><span class="n">get_table</span><span class="p">(</span><span class="n">submarket_table</span><span class="p">)[</span><span class="s">&quot;price_shifters&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">submarkets_ratios</span>
+
+        <span class="k">print</span> <span class="s">&quot;Running supply and demand&quot;</span>
+        <span class="k">print</span> <span class="s">&quot;Simulated Prices&quot;</span>
+        <span class="k">print</span> <span class="n">buildings</span><span class="p">[</span><span class="n">price_col</span><span class="p">]</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+        <span class="k">print</span> <span class="s">&quot;Submarket Price Shifters&quot;</span>
+        <span class="k">print</span> <span class="n">submarkets_ratios</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+        <span class="c"># we want new prices on the buildings, not on the units, so apply</span>
+        <span class="c"># shifters directly to buildings and ignore unit prices</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">add_column</span><span class="p">(</span><span class="n">buildings</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> 
+                       <span class="n">price_col</span><span class="o">+</span><span class="s">&quot;_hedonic&quot;</span><span class="p">,</span> <span class="n">buildings</span><span class="p">[</span><span class="n">price_col</span><span class="p">])</span>
+        <span class="n">new_prices</span> <span class="o">=</span> <span class="n">buildings</span><span class="p">[</span><span class="n">price_col</span><span class="p">]</span> <span class="o">*</span> \
+            <span class="n">submarkets_ratios</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">buildings</span><span class="p">[</span><span class="n">submarket_col</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">buildings</span><span class="o">.</span><span class="n">update_col_from_series</span><span class="p">(</span><span class="n">price_col</span><span class="p">,</span> <span class="n">new_prices</span><span class="p">)</span>
+        <span class="k">print</span> <span class="s">&quot;Adjusted Prices&quot;</span>
+        <span class="k">print</span> <span class="n">buildings</span><span class="p">[</span><span class="n">price_col</span><span class="p">]</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">movers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">vacant_units</span><span class="o">.</span><span class="n">sum</span><span class="p">():</span>
+        <span class="k">print</span> <span class="s">&quot;WARNING: Not enough locations for movers&quot;</span>
+        <span class="k">print</span> <span class="s">&quot;    reducing locations to size of movers for performance gain&quot;</span>
+        <span class="n">movers</span> <span class="o">=</span> <span class="n">movers</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">vacant_units</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+    <span class="n">new_units</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">yaml_to_class</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span><span class="o">.</span><span class="n">predict_from_cfg</span><span class="p">(</span><span class="n">movers</span><span class="p">,</span> <span class="n">units</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+
+    <span class="c"># new_units returns nans when there aren&#39;t enough units,</span>
+    <span class="c"># get rid of them and they&#39;ll stay as -1s</span>
+    <span class="n">new_units</span> <span class="o">=</span> <span class="n">new_units</span><span class="o">.</span><span class="n">dropna</span><span class="p">()</span>
+
+    <span class="c"># go from units back to buildings</span>
+    <span class="n">new_buildings</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">new_units</span><span class="o">.</span><span class="n">values</span><span class="p">][</span><span class="n">out_fname</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                              <span class="n">index</span><span class="o">=</span><span class="n">new_units</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="n">choosers</span><span class="o">.</span><span class="n">update_col_from_series</span><span class="p">(</span><span class="n">out_fname</span><span class="p">,</span> <span class="n">new_buildings</span><span class="p">)</span>
+    <span class="n">_print_number_unplaced</span><span class="p">(</span><span class="n">choosers</span><span class="p">,</span> <span class="n">out_fname</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">enable_supply_correction</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">new_prices</span> <span class="o">=</span> <span class="n">buildings</span><span class="p">[</span><span class="n">price_col</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s">&quot;clip_final_price_low&quot;</span> <span class="ow">in</span> <span class="n">enable_supply_correction</span><span class="p">:</span>
+            <span class="n">new_prices</span> <span class="o">=</span> <span class="n">new_prices</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="n">enable_supply_correction</span><span class="p">[</span>
+                <span class="s">&quot;clip_final_price_low&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s">&quot;clip_final_price_high&quot;</span> <span class="ow">in</span> <span class="n">enable_supply_correction</span><span class="p">:</span>
+            <span class="n">new_prices</span> <span class="o">=</span> <span class="n">new_prices</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="n">enable_supply_correction</span><span class="p">[</span>
+                <span class="s">&quot;clip_final_price_high&quot;</span><span class="p">])</span>
+        <span class="n">buildings</span><span class="o">.</span><span class="n">update_col_from_series</span><span class="p">(</span><span class="n">price_col</span><span class="p">,</span> <span class="n">new_prices</span><span class="p">)</span>
+            
+    <span class="n">vacant_units</span> <span class="o">=</span> <span class="n">buildings</span><span class="p">[</span><span class="n">vacant_fname</span><span class="p">]</span>
+    <span class="k">print</span> <span class="s">&quot;    and there are now </span><span class="si">%d</span><span class="s"> empty units&quot;</span> <span class="o">%</span> <span class="n">vacant_units</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">print</span> <span class="s">&quot;    and </span><span class="si">%d</span><span class="s"> overfull buildings&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">vacant_units</span><span class="p">[</span><span class="n">vacant_units</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">])</span>
+
+</div>
+<div class="viewcode-block" id="simple_relocation"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.simple_relocation">[docs]</a><span class="k">def</span> <span class="nf">simple_relocation</span><span class="p">(</span><span class="n">choosers</span><span class="p">,</span> <span class="n">relocation_rate</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run a simple rate based relocation model</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tbl : DataFrameWrapper or DataFrame</span>
+<span class="sd">        Table of agents that might relocate</span>
+<span class="sd">    rate : float</span>
+<span class="sd">        Rate of relocation</span>
+<span class="sd">    location_fname : str</span>
+<span class="sd">        The field name in the resulting dataframe to set to -1 (to unplace</span>
+<span class="sd">        new agents)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Nothing</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">print</span> <span class="s">&quot;Total agents: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">choosers</span><span class="p">)</span>
+    <span class="n">_print_number_unplaced</span><span class="p">(</span><span class="n">choosers</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="s">&quot;Assinging for relocation...&quot;</span>
+    <span class="n">chooser_ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">choosers</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">relocation_rate</span> <span class="o">*</span>
+                                   <span class="nb">len</span><span class="p">(</span><span class="n">choosers</span><span class="p">)),</span> <span class="n">replace</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">choosers</span><span class="o">.</span><span class="n">update_col_from_series</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span>
+                                    <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">chooser_ids</span><span class="p">))</span>
+
+    <span class="n">_print_number_unplaced</span><span class="p">(</span><span class="n">choosers</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="simple_transition"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.simple_transition">[docs]</a><span class="k">def</span> <span class="nf">simple_transition</span><span class="p">(</span><span class="n">tbl</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">location_fname</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run a simple growth rate transition model on the table passed in</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tbl : DataFrameWrapper</span>
+<span class="sd">        Table to be transitioned</span>
+<span class="sd">    rate : float</span>
+<span class="sd">        Growth rate</span>
+<span class="sd">    location_fname : str</span>
+<span class="sd">        The field name in the resulting dataframe to set to -1 (to unplace</span>
+<span class="sd">        new agents)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Nothing</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">transition</span> <span class="o">=</span> <span class="n">GrowthRateTransition</span><span class="p">(</span><span class="n">rate</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">tbl</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">local_columns</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="s">&quot;</span><span class="si">%d</span><span class="s"> agents before transition&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+    <span class="n">df</span><span class="p">,</span> <span class="n">added</span><span class="p">,</span> <span class="n">copied</span><span class="p">,</span> <span class="n">removed</span> <span class="o">=</span> <span class="n">transition</span><span class="o">.</span><span class="n">transition</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="k">print</span> <span class="s">&quot;</span><span class="si">%d</span><span class="s"> agents after transition&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="n">df</span><span class="p">[</span><span class="n">location_fname</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">added</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">add_table</span><span class="p">(</span><span class="n">tbl</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="full_transition"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.full_transition">[docs]</a><span class="k">def</span> <span class="nf">full_transition</span><span class="p">(</span><span class="n">agents</span><span class="p">,</span> <span class="n">agent_controls</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">settings</span><span class="p">,</span> <span class="n">location_fname</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run a transition model based on control totals specified in the usual</span>
+<span class="sd">    UrbanSim way</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    agents : DataFrameWrapper</span>
+<span class="sd">        Table to be transitioned</span>
+<span class="sd">    agent_controls : DataFrameWrapper</span>
+<span class="sd">        Table of control totals</span>
+<span class="sd">    year : int</span>
+<span class="sd">        The year, which will index into the controls</span>
+<span class="sd">    settings : dict</span>
+<span class="sd">        Contains the configuration for the transition model - is specified</span>
+<span class="sd">        down to the yaml level with a &quot;total_column&quot; which specifies the</span>
+<span class="sd">        control total and an &quot;add_columns&quot; param which specified which</span>
+<span class="sd">        columns to add when calling to_frame (should be a list of the columns</span>
+<span class="sd">        needed to do the transition</span>
+<span class="sd">    location_fname : str</span>
+<span class="sd">        The field name in the resulting dataframe to set to -1 (to unplace</span>
+<span class="sd">        new agents)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Nothing</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ct</span> <span class="o">=</span> <span class="n">agent_controls</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+    <span class="n">hh</span> <span class="o">=</span> <span class="n">agents</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(</span><span class="n">agents</span><span class="o">.</span><span class="n">local_columns</span> <span class="o">+</span>
+                         <span class="n">settings</span><span class="p">[</span><span class="s">&#39;add_columns&#39;</span><span class="p">])</span>
+    <span class="k">print</span> <span class="s">&quot;Total agents before transition: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hh</span><span class="p">))</span>
+    <span class="n">tran</span> <span class="o">=</span> <span class="n">transition</span><span class="o">.</span><span class="n">TabularTotalsTransition</span><span class="p">(</span><span class="n">ct</span><span class="p">,</span> <span class="n">settings</span><span class="p">[</span><span class="s">&#39;total_column&#39;</span><span class="p">])</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">transition</span><span class="o">.</span><span class="n">TransitionModel</span><span class="p">(</span><span class="n">tran</span><span class="p">)</span>
+    <span class="n">new</span><span class="p">,</span> <span class="n">added_hh_idx</span><span class="p">,</span> <span class="n">new_linked</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">transition</span><span class="p">(</span><span class="n">hh</span><span class="p">,</span> <span class="n">year</span><span class="p">)</span>
+    <span class="n">new</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">added_hh_idx</span><span class="p">,</span> <span class="n">location_fname</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">print</span> <span class="s">&quot;Total agents after transition: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new</span><span class="p">))</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">add_table</span><span class="p">(</span><span class="n">agents</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
+
+</div>
+<span class="k">def</span> <span class="nf">_print_number_unplaced</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">fieldname</span><span class="p">):</span>
+    <span class="k">print</span> <span class="s">&quot;Total currently unplaced: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> \
+          <span class="n">df</span><span class="p">[</span><span class="n">fieldname</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="run_feasibility"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.run_feasibility">[docs]</a><span class="k">def</span> <span class="nf">run_feasibility</span><span class="p">(</span><span class="n">parcels</span><span class="p">,</span> <span class="n">parcel_price_callback</span><span class="p">,</span>
+                    <span class="n">parcel_use_allowed_callback</span><span class="p">,</span> <span class="n">residential_to_yearly</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                    <span class="n">parcel_filter</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                    <span class="n">config</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">pass_through</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Execute development feasibility on all parcels</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parcels : DataFrame Wrapper</span>
+<span class="sd">        The data frame wrapper for the parcel data</span>
+<span class="sd">    parcel_price_callback : function</span>
+<span class="sd">        A callback which takes each use of the pro forma and returns a series</span>
+<span class="sd">        with index as parcel_id and value as yearly_rent</span>
+<span class="sd">    parcel_use_allowed_callback : function</span>
+<span class="sd">        A callback which takes each form of the pro forma and returns a series</span>
+<span class="sd">        with index as parcel_id and value and boolean whether the form</span>
+<span class="sd">        is allowed on the parcel</span>
+<span class="sd">    residential_to_yearly : boolean (default true)</span>
+<span class="sd">        Whether to use the cap rate to convert the residential price from total</span>
+<span class="sd">        sales price per sqft to rent per sqft</span>
+<span class="sd">    parcel_filter : string</span>
+<span class="sd">        A filter to apply to the parcels data frame to remove parcels from</span>
+<span class="sd">        consideration - is typically used to remove parcels with buildings</span>
+<span class="sd">        older than a certain date for historical preservation, but is</span>
+<span class="sd">        generally useful</span>
+<span class="sd">    config : SqFtProFormaConfig configuration object.  Optional.  Defaults to</span>
+<span class="sd">        None</span>
+<span class="sd">    pass_through : list of strings</span>
+<span class="sd">        Will be passed to the feasibility lookup function - is used to pass</span>
+<span class="sd">        variables from the parcel dataframe to the output dataframe, usually</span>
+<span class="sd">        for debugging</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Adds a table called feasibility to the sim object (returns nothing)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">pf</span> <span class="o">=</span> <span class="n">sqftproforma</span><span class="o">.</span><span class="n">SqFtProForma</span><span class="p">(</span><span class="n">config</span><span class="p">)</span> <span class="k">if</span> <span class="n">config</span> \
+        <span class="k">else</span> <span class="n">sqftproforma</span><span class="o">.</span><span class="n">SqFtProForma</span><span class="p">()</span>
+
+    <span class="n">df</span> <span class="o">=</span> <span class="n">parcels</span><span class="o">.</span><span class="n">to_frame</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">parcel_filter</span><span class="p">:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">parcel_filter</span><span class="p">)</span>
+
+    <span class="c"># add prices for each use</span>
+    <span class="k">for</span> <span class="n">use</span> <span class="ow">in</span> <span class="n">pf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">uses</span><span class="p">:</span>
+        <span class="c"># assume we can get the 80th percentile price for new development</span>
+        <span class="n">df</span><span class="p">[</span><span class="n">use</span><span class="p">]</span> <span class="o">=</span> <span class="n">parcel_price_callback</span><span class="p">(</span><span class="n">use</span><span class="p">)</span>
+
+    <span class="c"># convert from cost to yearly rent</span>
+    <span class="k">if</span> <span class="n">residential_to_yearly</span><span class="p">:</span>
+        <span class="n">df</span><span class="p">[</span><span class="s">&quot;residential&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">pf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">cap_rate</span>
+
+    <span class="k">print</span> <span class="s">&quot;Describe of the yearly rent by use&quot;</span>
+    <span class="k">print</span> <span class="n">df</span><span class="p">[</span><span class="n">pf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">uses</span><span class="p">]</span><span class="o">.</span><span class="n">describe</span><span class="p">()</span>
+
+    <span class="n">d</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">form</span> <span class="ow">in</span> <span class="n">pf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">forms</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;Computing feasibility for form </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">form</span>
+        <span class="n">d</span><span class="p">[</span><span class="n">form</span><span class="p">]</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">lookup</span><span class="p">(</span><span class="n">form</span><span class="p">,</span> <span class="n">df</span><span class="p">[</span><span class="n">parcel_use_allowed_callback</span><span class="p">(</span><span class="n">form</span><span class="p">)],</span>
+                            <span class="n">pass_through</span><span class="o">=</span><span class="n">pass_through</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">residential_to_yearly</span> <span class="ow">and</span> <span class="s">&quot;residential&quot;</span> <span class="ow">in</span> <span class="n">pass_through</span><span class="p">:</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">form</span><span class="p">][</span><span class="s">&quot;residential&quot;</span><span class="p">]</span> <span class="o">/=</span> <span class="n">pf</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">cap_rate</span>
+
+    <span class="n">far_predictions</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">keys</span><span class="o">=</span><span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">sim</span><span class="o">.</span><span class="n">add_table</span><span class="p">(</span><span class="s">&quot;feasibility&quot;</span><span class="p">,</span> <span class="n">far_predictions</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="run_developer"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.run_developer">[docs]</a><span class="k">def</span> <span class="nf">run_developer</span><span class="p">(</span><span class="n">forms</span><span class="p">,</span> <span class="n">agents</span><span class="p">,</span> <span class="n">buildings</span><span class="p">,</span> <span class="n">supply_fname</span><span class="p">,</span> <span class="n">parcel_size</span><span class="p">,</span>
+                  <span class="n">ave_unit_size</span><span class="p">,</span> <span class="n">total_units</span><span class="p">,</span> <span class="n">feasibility</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                  <span class="n">target_vacancy</span><span class="o">=.</span><span class="mi">1</span><span class="p">,</span> <span class="n">form_to_btype_callback</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                  <span class="n">add_more_columns_callback</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_parcel_size</span><span class="o">=</span><span class="mi">2000000</span><span class="p">,</span>
+                  <span class="n">residential</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">bldg_sqft_per_job</span><span class="o">=</span><span class="mf">400.0</span><span class="p">,</span>
+                  <span class="n">min_unit_size</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">remove_developed_buildings</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                  <span class="n">unplace_agents</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;households&#39;</span><span class="p">,</span> <span class="s">&#39;jobs&#39;</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Run the developer model to pick and build buildings</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    forms : string or list of strings</span>
+<span class="sd">        Passed directly dev.pick</span>
+<span class="sd">    agents : DataFrame Wrapper</span>
+<span class="sd">        Used to compute the current demand for units/floorspace in the area</span>
+<span class="sd">    buildings : DataFrame Wrapper</span>
+<span class="sd">        Used to compute the current supply of units/floorspace in the area</span>
+<span class="sd">    supply_fname : string</span>
+<span class="sd">        Identifies the column in buildings which indicates the supply of</span>
+<span class="sd">        units/floorspace</span>
+<span class="sd">    parcel_size : Series</span>
+<span class="sd">        Passed directly to dev.pick</span>
+<span class="sd">    ave_unit_size : Series</span>
+<span class="sd">        Passed directly to dev.pick - average residential unit size</span>
+<span class="sd">    total_units : Series</span>
+<span class="sd">        Passed directly to dev.pick - total current residential_units /</span>
+<span class="sd">        job_spaces</span>
+<span class="sd">    feasibility : DataFrame Wrapper</span>
+<span class="sd">        The output from feasibility above (the table called &#39;feasibility&#39;)</span>
+<span class="sd">    year : int</span>
+<span class="sd">        The year of the simulation - will be assigned to &#39;year_built&#39; on the</span>
+<span class="sd">        new buildings</span>
+<span class="sd">    target_vacancy : float</span>
+<span class="sd">        The target vacancy rate - used to determine how much to build</span>
+<span class="sd">    form_to_btype_callback : function</span>
+<span class="sd">        Will be used to convert the &#39;forms&#39; in the pro forma to</span>
+<span class="sd">        &#39;building_type_id&#39; in the larger model</span>
+<span class="sd">    add_more_columns_callback : function</span>
+<span class="sd">        Takes a dataframe and returns a dataframe - is used to make custom</span>
+<span class="sd">        modifications to the new buildings that get added</span>
+<span class="sd">    max_parcel_size : float</span>
+<span class="sd">        Passed directly to dev.pick - max parcel size to consider</span>
+<span class="sd">    min_unit_size : float</span>
+<span class="sd">        Passed directly to dev.pick - min unit size that is valid</span>
+<span class="sd">    residential : boolean</span>
+<span class="sd">        Passed directly to dev.pick - switches between adding/computing</span>
+<span class="sd">        residential_units and job_spaces</span>
+<span class="sd">    bldg_sqft_per_job : float</span>
+<span class="sd">        Passed directly to dev.pick - specified the multiplier between</span>
+<span class="sd">        floor spaces and job spaces for this form (does not vary by parcel</span>
+<span class="sd">        as ave_unit_size does)</span>
+<span class="sd">    remove_redeveloped_buildings : optional, boolean (default True)</span>
+<span class="sd">        Remove all buildings on the parcels which are being developed on</span>
+<span class="sd">    unplace_agents : optional : list of strings (default [&#39;households&#39;, &#39;jobs&#39;])</span>
+<span class="sd">        For all tables in the list, will look for field building_id and set</span>
+<span class="sd">        it to -1 for buildings which are removed - only executed if</span>
+<span class="sd">        remove_developed_buildings is true</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Writes the result back to the buildings table and returns the new</span>
+<span class="sd">    buildings with available debugging information on each new building</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">dev</span> <span class="o">=</span> <span class="n">developer</span><span class="o">.</span><span class="n">Developer</span><span class="p">(</span><span class="n">feasibility</span><span class="o">.</span><span class="n">to_frame</span><span class="p">())</span>
+
+    <span class="n">target_units</span> <span class="o">=</span> <span class="n">dev</span><span class="o">.</span>\
+        <span class="n">compute_units_to_build</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">agents</span><span class="p">),</span>
+                               <span class="n">buildings</span><span class="p">[</span><span class="n">supply_fname</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+                               <span class="n">target_vacancy</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="s">&quot;{:,} feasible buildings before running developer&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+          <span class="nb">len</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">feasibility</span><span class="p">))</span>
+
+    <span class="n">new_buildings</span> <span class="o">=</span> <span class="n">dev</span><span class="o">.</span><span class="n">pick</span><span class="p">(</span><span class="n">forms</span><span class="p">,</span>
+                             <span class="n">target_units</span><span class="p">,</span>
+                             <span class="n">parcel_size</span><span class="p">,</span>
+                             <span class="n">ave_unit_size</span><span class="p">,</span>
+                             <span class="n">total_units</span><span class="p">,</span>
+                             <span class="n">max_parcel_size</span><span class="o">=</span><span class="n">max_parcel_size</span><span class="p">,</span>
+                             <span class="n">min_unit_size</span><span class="o">=</span><span class="n">min_unit_size</span><span class="p">,</span>
+                             <span class="n">drop_after_build</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                             <span class="n">residential</span><span class="o">=</span><span class="n">residential</span><span class="p">,</span>
+                             <span class="n">bldg_sqft_per_job</span><span class="o">=</span><span class="n">bldg_sqft_per_job</span><span class="p">)</span>
+
+    <span class="n">sim</span><span class="o">.</span><span class="n">add_table</span><span class="p">(</span><span class="s">&quot;feasibility&quot;</span><span class="p">,</span> <span class="n">dev</span><span class="o">.</span><span class="n">feasibility</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">new_buildings</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_buildings</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">new_buildings</span>
+
+    <span class="k">if</span> <span class="n">year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">new_buildings</span><span class="p">[</span><span class="s">&quot;year_built&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">year</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">forms</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="c"># form gets set only if forms is a list</span>
+        <span class="n">new_buildings</span><span class="p">[</span><span class="s">&quot;form&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">forms</span>
+
+    <span class="k">if</span> <span class="n">form_to_btype_callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">new_buildings</span><span class="p">[</span><span class="s">&quot;building_type_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_buildings</span><span class="o">.</span>\
+            <span class="nb">apply</span><span class="p">(</span><span class="n">form_to_btype_callback</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">new_buildings</span><span class="p">[</span><span class="s">&quot;stories&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_buildings</span><span class="o">.</span><span class="n">stories</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">)</span>
+
+    <span class="n">ret_buildings</span> <span class="o">=</span> <span class="n">new_buildings</span>
+    <span class="k">if</span> <span class="n">add_more_columns_callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">new_buildings</span> <span class="o">=</span> <span class="n">add_more_columns_callback</span><span class="p">(</span><span class="n">new_buildings</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="s">&quot;Adding {:,} buildings with {:,} {}&quot;</span><span class="o">.</span>\
+        <span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">new_buildings</span><span class="p">),</span>
+               <span class="nb">int</span><span class="p">(</span><span class="n">new_buildings</span><span class="p">[</span><span class="n">supply_fname</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()),</span>
+               <span class="n">supply_fname</span><span class="p">)</span>
+
+    <span class="k">print</span> <span class="s">&quot;{:,} feasible buildings after running developer&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+          <span class="nb">len</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">feasibility</span><span class="p">))</span>
+
+    <span class="n">old_buildings</span> <span class="o">=</span> <span class="n">buildings</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(</span><span class="n">buildings</span><span class="o">.</span><span class="n">local_columns</span><span class="p">)</span>
+    <span class="n">new_buildings</span> <span class="o">=</span> <span class="n">new_buildings</span><span class="p">[</span><span class="n">buildings</span><span class="o">.</span><span class="n">local_columns</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">remove_developed_buildings</span><span class="p">:</span>
+        <span class="n">redev_buildings</span> <span class="o">=</span> <span class="n">old_buildings</span><span class="o">.</span><span class="n">parcel_id</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">new_buildings</span><span class="o">.</span><span class="n">parcel_id</span><span class="p">)</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">old_buildings</span><span class="p">)</span>
+        <span class="n">drop_buildings</span> <span class="o">=</span> <span class="n">old_buildings</span><span class="p">[</span><span class="n">redev_buildings</span><span class="p">]</span>
+        <span class="n">old_buildings</span> <span class="o">=</span> <span class="n">old_buildings</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">redev_buildings</span><span class="p">)]</span>
+        <span class="n">l2</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">old_buildings</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">l2</span><span class="o">-</span><span class="n">l</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;Dropped {} buildings because they were redeveloped&quot;</span><span class="o">.</span>\
+                <span class="n">format</span><span class="p">(</span><span class="n">l2</span><span class="o">-</span><span class="n">l</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">tbl</span> <span class="ow">in</span> <span class="n">unplace_agents</span><span class="p">:</span>
+            <span class="n">agents</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_table</span><span class="p">(</span><span class="n">tbl</span><span class="p">)</span>
+            <span class="n">agents</span> <span class="o">=</span> <span class="n">agents</span><span class="o">.</span><span class="n">to_frame</span><span class="p">(</span><span class="n">agents</span><span class="o">.</span><span class="n">local_columns</span><span class="p">)</span>
+            <span class="n">displaced_agents</span> <span class="o">=</span> <span class="n">agents</span><span class="o">.</span><span class="n">building_id</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">drop_buildings</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s">&quot;Unplaced {} before: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tbl</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">agents</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+                                                  <span class="s">&quot;building_id == -1&quot;</span><span class="p">)))</span>
+            <span class="n">agents</span><span class="o">.</span><span class="n">building_id</span><span class="p">[</span><span class="n">displaced_agents</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">print</span> <span class="s">&quot;Unplaced {} after: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tbl</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">agents</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+                                                 <span class="s">&quot;building_id == -1&quot;</span><span class="p">)))</span>
+            <span class="n">sim</span><span class="o">.</span><span class="n">add_table</span><span class="p">(</span><span class="n">tbl</span><span class="p">,</span> <span class="n">agents</span><span class="p">)</span>
+
+    <span class="n">all_buildings</span> <span class="o">=</span> <span class="n">dev</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">old_buildings</span><span class="p">,</span> <span class="n">new_buildings</span><span class="p">)</span>
+
+    <span class="n">sim</span><span class="o">.</span><span class="n">add_table</span><span class="p">(</span><span class="s">&quot;buildings&quot;</span><span class="p">,</span> <span class="n">all_buildings</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ret_buildings</span>
+
+</div>
+<div class="viewcode-block" id="SimulationSummaryData"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.SimulationSummaryData">[docs]</a><span class="k">class</span> <span class="nc">SimulationSummaryData</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Keep track of zone-level and parcel-level output for use in the</span>
+<span class="sd">    simulation explorer.  Writes the correct format and filenames that the</span>
+<span class="sd">    simulation explorer expects.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    run_number : int</span>
+<span class="sd">        The run number for this run</span>
+<span class="sd">    zone_indicator_file : optional, str</span>
+<span class="sd">        A template for the zone_indicator_filename - use {} notation and the</span>
+<span class="sd">        run_number will be substituted.  Should probably not be modified if</span>
+<span class="sd">        using the simulation explorer.</span>
+<span class="sd">    parcel_indicator_file : optional, str</span>
+<span class="sd">        A template for the parcel_indicator_filename - use {} notation and the</span>
+<span class="sd">        run_number will be substituted.  Should probably not be modified if</span>
+<span class="sd">        using the simulation explorer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">run_number</span><span class="p">,</span>
+                 <span class="n">zone_indicator_file</span><span class="o">=</span><span class="s">&quot;runs/run{}_simulation_output.json&quot;</span><span class="p">,</span>
+                 <span class="n">parcel_indicator_file</span><span class="o">=</span><span class="s">&quot;runs/run{}_parcel_output.csv&quot;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_num</span> <span class="o">=</span> <span class="n">run_number</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zone_indicator_file</span> <span class="o">=</span> <span class="n">zone_indicator_file</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">run_number</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parcel_indicator_file</span> <span class="o">=</span> \
+            <span class="n">parcel_indicator_file</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">run_number</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parcel_output</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zone_output</span> <span class="o">=</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="SimulationSummaryData.add_zone_output"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.SimulationSummaryData.add_zone_output">[docs]</a>    <span class="k">def</span> <span class="nf">add_zone_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zones_df</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="nb">round</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Pass in a dataframe and this function will store the results in the</span>
+<span class="sd">        simulation state to write out at the end (to describe how the simulation</span>
+<span class="sd">        changes over time)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        zones_df : DataFrame</span>
+<span class="sd">            dataframe of indicators whose index is the zone_id and columns are</span>
+<span class="sd">            indicators describing the simulation</span>
+<span class="sd">        name : string</span>
+<span class="sd">            The name of the dataframe to use to differentiate all the sources of</span>
+<span class="sd">            the indicators</span>
+<span class="sd">        year : int</span>
+<span class="sd">            The year to associate with these indicators</span>
+<span class="sd">        round : int</span>
+<span class="sd">            The number of decimal places to round to in the output json</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Nothing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># this creates a hierarchical json data structure to encapsulate</span>
+        <span class="c"># zone-level indicators over the simulation years.  &quot;index&quot; is the ids</span>
+        <span class="c"># of the shapes that this will be joined to and &quot;year&quot; is the list of</span>
+        <span class="c"># years. Each indicator then get put under a two-level dictionary of</span>
+        <span class="c"># column name and then year.  this is not the most efficient data</span>
+        <span class="c"># structure but since the number of zones is pretty small, it is a</span>
+        <span class="c"># simple and convenient data structure</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">zone_output</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s">&quot;index&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">zones_df</span><span class="o">.</span><span class="n">index</span><span class="p">),</span>
+                <span class="s">&quot;years&quot;</span><span class="p">:</span> <span class="p">[]</span>
+            <span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zone_output</span>
+
+        <span class="k">assert</span> <span class="n">d</span><span class="p">[</span><span class="s">&quot;index&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span><span class="n">zones_df</span><span class="o">.</span><span class="n">index</span><span class="p">),</span> <span class="s">&quot;Passing in zones &quot;</span> \
+            <span class="s">&quot;dataframe that is not aligned on the same index as a previous &quot;</span> \
+            <span class="s">&quot;dataframe&quot;</span>
+
+        <span class="k">if</span> <span class="n">year</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="s">&quot;years&quot;</span><span class="p">]:</span>
+            <span class="n">d</span><span class="p">[</span><span class="s">&quot;years&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">year</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">zones_df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+            <span class="n">d</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="s">&quot;original_df&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">zones_df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">dtype</span>
+            <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s">&quot;float64&quot;</span> <span class="ow">or</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s">&quot;float32&quot;</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">d</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">year</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="nb">round</span><span class="p">))]</span>
+            <span class="k">elif</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s">&quot;int64&quot;</span> <span class="ow">or</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s">&quot;int32&quot;</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">d</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">year</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">d</span><span class="p">[</span><span class="n">col</span><span class="p">][</span><span class="n">year</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">zone_output</span> <span class="o">=</span> <span class="n">d</span>
+</div>
+<div class="viewcode-block" id="SimulationSummaryData.add_parcel_output"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.SimulationSummaryData.add_parcel_output">[docs]</a>    <span class="k">def</span> <span class="nf">add_parcel_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_parcel_output</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add new parcel-level indicators to the parcel output.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        new_parcel_output : DataFrame</span>
+<span class="sd">            Adds a new set of parcel data for output exploration - this data</span>
+<span class="sd">            is merged with previous data that has been added.  This data is</span>
+<span class="sd">            generally used to capture new developments that UrbanSim has</span>
+<span class="sd">            predicted, thus it doesn&#39;t override previous years&#39; indicators</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Nothing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">new_parcel_output</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parcel_output</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># merge with old  parcel output</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parcel_output</span> <span class="o">=</span> \
+                <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">parcel_output</span><span class="p">,</span> <span class="n">new_parcel_output</span><span class="p">])</span><span class="o">.</span>\
+                <span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parcel_output</span> <span class="o">=</span> <span class="n">new_parcel_output</span>
+</div>
+<div class="viewcode-block" id="SimulationSummaryData.write_parcel_output"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.SimulationSummaryData.write_parcel_output">[docs]</a>    <span class="k">def</span> <span class="nf">write_parcel_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                            <span class="n">add_xy</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write the parcel-level output to a csv file</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        add_xy : dictionary (optional)</span>
+<span class="sd">            Used to add x, y values to the output - an example dictionary is</span>
+<span class="sd">            pasted below - the parameters should be fairly self explanatory.</span>
+<span class="sd">            Note that from_epsg and to_epsg can be omitted in which case the</span>
+<span class="sd">            coordinate system is not changed.  NOTE: pyproj is required</span>
+<span class="sd">            if changing coordinate systems::</span>
+
+<span class="sd">                {</span>
+<span class="sd">                    &quot;xy_table&quot;: &quot;parcels&quot;,</span>
+<span class="sd">                    &quot;foreign_key&quot;: &quot;parcel_id&quot;,</span>
+<span class="sd">                    &quot;x_col&quot;: &quot;x&quot;,</span>
+<span class="sd">                    &quot;y_col&quot;: &quot;y&quot;,</span>
+<span class="sd">                    &quot;from_epsg&quot;: 3740,</span>
+<span class="sd">                    &quot;to_epsg&quot;: 4326</span>
+<span class="sd">                }</span>
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Nothing</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parcel_output</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">po</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parcel_output</span>
+        <span class="k">if</span> <span class="n">add_xy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">x_name</span><span class="p">,</span> <span class="n">y_name</span> <span class="o">=</span> <span class="n">add_xy</span><span class="p">[</span><span class="s">&quot;x_col&quot;</span><span class="p">],</span> <span class="n">add_xy</span><span class="p">[</span><span class="s">&quot;y_col&quot;</span><span class="p">]</span>
+            <span class="n">xy_joinname</span> <span class="o">=</span> <span class="n">add_xy</span><span class="p">[</span><span class="s">&quot;foreign_key&quot;</span><span class="p">]</span>
+            <span class="n">xy_df</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">get_table</span><span class="p">(</span><span class="n">add_xy</span><span class="p">[</span><span class="s">&quot;xy_table&quot;</span><span class="p">])</span>
+            <span class="n">po</span><span class="p">[</span><span class="n">x_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">xy_df</span><span class="p">[</span><span class="n">x_name</span><span class="p">],</span> <span class="n">po</span><span class="p">[</span><span class="n">xy_joinname</span><span class="p">])</span>
+            <span class="n">po</span><span class="p">[</span><span class="n">y_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">misc</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">xy_df</span><span class="p">[</span><span class="n">y_name</span><span class="p">],</span> <span class="n">po</span><span class="p">[</span><span class="n">xy_joinname</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="s">&quot;from_epsg&quot;</span> <span class="ow">in</span> <span class="n">add_xy</span> <span class="ow">and</span> <span class="s">&quot;to_epsg&quot;</span> <span class="ow">in</span> <span class="n">add_xy</span><span class="p">:</span>
+                <span class="kn">import</span> <span class="nn">pyproj</span>
+                <span class="n">p1</span> <span class="o">=</span> <span class="n">pyproj</span><span class="o">.</span><span class="n">Proj</span><span class="p">(</span><span class="s">&#39;+init=epsg:</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">add_xy</span><span class="p">[</span><span class="s">&quot;from_epsg&quot;</span><span class="p">])</span>
+                <span class="n">p2</span> <span class="o">=</span> <span class="n">pyproj</span><span class="o">.</span><span class="n">Proj</span><span class="p">(</span><span class="s">&#39;+init=epsg:</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">add_xy</span><span class="p">[</span><span class="s">&quot;to_epsg&quot;</span><span class="p">])</span>
+                <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">pyproj</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">,</span>
+                                          <span class="n">po</span><span class="p">[</span><span class="n">x_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                                          <span class="n">po</span><span class="p">[</span><span class="n">y_name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+                <span class="n">po</span><span class="p">[</span><span class="n">x_name</span><span class="p">],</span> <span class="n">po</span><span class="p">[</span><span class="n">y_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span>
+
+        <span class="n">po</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parcel_indicator_file</span><span class="p">,</span> <span class="n">index_label</span><span class="o">=</span><span class="s">&quot;development_id&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="SimulationSummaryData.write_zone_output"><a class="viewcode-back" href="../../index.html#urbansim_defaults.utils.SimulationSummaryData.write_zone_output">[docs]</a>    <span class="k">def</span> <span class="nf">write_zone_output</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write the zone-level output to a file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">zone_output</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">outf</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zone_indicator_file</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">)</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">zone_output</span><span class="p">,</span> <span class="n">outf</span><span class="p">)</span>
+        <span class="n">outf</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Synthicity.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1dev',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
