@@ -97,28 +97,30 @@ def table_reprocess(cfg, df):
         options include "drop", "zero", "median", "mode", and "mean".  The
         "type" must also be specified since items like "median" usually
         return floats but the result is often desired to be an "int" - the
-        type is thus specified to avoid ambiguity.
-        {
-            "filter": "building_type_id >= 1 and building_type_id <= 14",
-            "fill_nas": {
-                "building_type_id": {
-                    "how": "drop",
-                    "type": "int"
-                },
-                "residential_units": {
-                    "how": "zero",
-                    "type": "int"
-                },
-                "year_built": {
-                    "how": "median",
-                    "type": "int"
-                },
-                "building_type_id": {
-                    "how": "mode",
-                    "type": "int"
+        type is thus specified to avoid ambiguity.::
+
+            {
+                "filter": "building_type_id >= 1 and building_type_id <= 14",
+                "fill_nas": {
+                    "building_type_id": {
+                        "how": "drop",
+                        "type": "int"
+                    },
+                    "residential_units": {
+                        "how": "zero",
+                        "type": "int"
+                    },
+                    "year_built": {
+                        "how": "median",
+                        "type": "int"
+                    },
+                    "building_type_id": {
+                        "how": "mode",
+                        "type": "int"
+                    }
                 }
             }
-        }
+
     df : DataFrame to process
 
     Returns
@@ -891,15 +893,17 @@ class SimulationSummaryData(object):
             pasted below - the parameters should be fairly self explanatory.
             Note that from_epsg and to_epsg can be omitted in which case the
             coordinate system is not changed.  NOTE: pyproj is required
-            if changing coordinate systems
-            {
-                "xy_table": "parcels",
-                "foreign_key": "parcel_id",
-                "x_col": "x",
-                "y_col": "y",
-                "from_epsg": 3740,
-                "to_epsg": 4326
-            }
+            if changing coordinate systems::
+
+                {
+                    "xy_table": "parcels",
+                    "foreign_key": "parcel_id",
+                    "x_col": "x",
+                    "y_col": "y",
+                    "from_epsg": 3740,
+                    "to_epsg": 4326
+                }
+
 
         Returns
         -------
