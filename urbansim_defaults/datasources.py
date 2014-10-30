@@ -16,7 +16,11 @@ pd.options.mode.chained_assignment = None
 @sim.injectable('settings', cache=True)
 def settings():
     with open(os.path.join(misc.configs_dir(), "settings.yaml")) as f:
-        return yaml.load(f)
+        settings = yaml.load(f)
+        # monkey patch on the settings object since it's pretty global
+        # but will also be available as injectable
+        sim.settings = settings
+        return settings
 
 
 @sim.injectable('run_number')
@@ -30,10 +34,15 @@ def uuid_hex():
 
 
 @sim.injectable('store', cache=True)
-def hdfstore():
+def hdfstore(settings):
     return pd.HDFStore(
-        os.path.join(misc.data_dir(), sim.get_injectable('settings')["store"]),
+        os.path.join(misc.data_dir(), settings["store"]),
         mode='r')
+
+
+@sim.injectable("summary", cache=True)
+def simulation_summary_data(run_number):
+    return utils.SimulationSummaryData(run_number)
 
 
 @sim.injectable("building_type_map")
