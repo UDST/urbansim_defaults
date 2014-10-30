@@ -53,7 +53,15 @@ def scenario_inputs(settings):
 
 @sim.injectable("aggregations")
 def aggregations(settings):
+    if "aggregation_tables" not in settings or \
+    	settings["aggregation_tables"] is None:
+    	return []
     return [sim.get_table(tbl) for tbl in settings["aggregation_tables"]]
+    
+    
+@sim.injectable('building_sqft_per_job', cache=True)
+def building_sqft_per_job(settings):
+    return settings['building_sqft_per_job']
 
 
 @sim.table_source('buildings')
@@ -79,9 +87,12 @@ def buildings(store, households, jobs, building_sqft_per_job, settings):
         ], axis=1)
         df["non_residential_sqft"] = tmp_df.max(axis=1).apply(np.ceil)
 
-    fill_nas_cfg = settings.get("table_reprocess", {}).get("buildings", None)
+    fill_nas_cfg = settings.get("table_reprocess", None)
+    if fill_nas_cfg is not None:
+        fill_nas_cfg = fill_nas_cfg.get("buildings", None)
     if fill_nas_cfg is not None:
         df = utils.table_reprocess(fill_nas_cfg, df)
+        
 
     return df
 
@@ -121,8 +132,10 @@ def households(store, settings):
         # have to do it this way to prevent circular reference
         df.building_id.loc[~df.building_id.isin(store['buildings'].index)] = -1
 
-    fill_nas_cfg = settings.get("table_reprocess", {}).get("households", None)
+    fill_nas_cfg = settings.get("table_reprocess", None)
     if fill_nas_cfg is not None:
+	    fill_nas_cfg = fill_nas_cfg.get("households", None)
+    if fill_nas_cfg is not None:	    
         df = utils.table_reprocess(fill_nas_cfg, df)
 
     return df
