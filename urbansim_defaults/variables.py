@@ -66,7 +66,7 @@ def vacant_job_spaces(buildings, jobs):
 
 @sim.column('households', 'income_quartile', cache=True)
 def income_quartile(households):
-    s = pd.Series(pd.qcut(households.income, 4).labels,
+    s = pd.Series(pd.qcut(households.income, 4, labels=False),
                   index=households.index)
     # convert income quartile from 0-3 to 1-4
     s = s.add(1)

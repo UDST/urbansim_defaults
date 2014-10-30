@@ -1,10 +1,7 @@
-from urbansim.developer import developer
 import urbansim.sim.simulation as sim
 from urbansim.utils import misc
 from urbansim.utils import networks
-from urbansim.models import transition
 import os
-import random
 from urbansim_defaults import utils
 import time
 import datasources
@@ -78,18 +75,11 @@ def jobs_relocation(jobs, settings):
 
 @sim.model('households_transition')
 def households_transition(households, household_controls, year, settings):
-    ct = household_controls.to_frame()
-    hh = households.to_frame(households.local_columns +
-                             settings['households_transition']['add_columns'])
-    print "Total households before transition: {}".format(len(hh))
-    tran = transition.TabularTotalsTransition(ct,
-                                              settings['households_transition']
-                                              ['total_column'])
-    model = transition.TransitionModel(tran)
-    new, added_hh_idx, new_linked = model.transition(hh, year)
-    new.loc[added_hh_idx, "building_id"] = -1
-    print "Total households after transition: {}".format(len(new))
-    sim.add_table("households", new)
+    return utils.full_transition(households,
+                                 household_controls,
+                                 year,
+                                 settings['households_transition'],
+                                 "building_id")
 
 
 @sim.model('simple_households_transition')
@@ -100,18 +90,11 @@ def simple_households_transition(households, settings):
 
 @sim.model('jobs_transition')
 def jobs_transition(jobs, employment_controls, year, settings):
-    ct = employment_controls.to_frame()
-    hh = jobs.to_frame(jobs.local_columns +
-                       settings['jobs_transition']['add_columns'])
-    print "Total jobs before transition: {}".format(len(hh))
-    tran = transition.TabularTotalsTransition(ct,
-                                              settings['jobs_transition']
-                                              ['total_column'])
-    model = transition.TransitionModel(tran)
-    new, added_hh_idx, new_linked = model.transition(hh, year)
-    new.loc[added_hh_idx, "building_id"] = -1
-    print "Total jobs after transition: {}".format(len(new))
-    sim.add_table("jobs", new)
+    return utils.full_transition(jobs,
+                                 employment_controls,
+                                 year,
+                                 settings['jobs_transition'],
+                                 "building_id")
 
 
 @sim.model('simple_jobs_transition')
@@ -120,7 +103,7 @@ def jobs_transition(jobs, settings):
     return utils.simple_transition(jobs, rate, "building_id")
 
 
-@sim.model('build_networks')
+@sim.injectable('net', cache=True)
 def build_networks(settings):
     name = settings['build_networks']['name']
     st = pd.HDFStore(os.path.join(misc.data_dir(), name), "r")
@@ -128,7 +111,7 @@ def build_networks(settings):
     net = pdna.Network(nodes["x"], nodes["y"], edges["from"], edges["to"],
                        edges[["weight"]])
     net.precompute(settings['build_networks']['max_distance'])
-    sim.add_injectable("net", net)
+    return net
 
 
 @sim.model('neighborhood_vars')
@@ -150,11 +133,13 @@ def price_vars(net):
 
 
 @sim.model('feasibility')
-def feasibility(parcels, settings):
+def feasibility(parcels, settings,
+                parcel_sales_price_sqft_func,
+                parcel_is_allowed_func):
     kwargs = settings['feasibility']
     utils.run_feasibility(parcels,
-                          sim.get_injectable('parcel_sales_price_sqft'),
-                          sim.get_injectable('parcel_is_allowed'),
+                          parcel_sales_price_sqft_func,
+                          parcel_is_allowed_func,
                           **kwargs)
 
 
@@ -166,7 +151,7 @@ def add_extra_columns(df):
 
 @sim.model('residential_developer')
 def residential_developer(feasibility, households, buildings, parcels, year,
-                          settings):
+                          settings, summary, form_to_btype_func):
     kwargs = settings['residential_developer']
     new_buildings = utils.run_developer(
         "residential",
@@ -178,16 +163,16 @@ def residential_developer(feasibility, households, buildings, parcels, year,
         parcels.total_residential_units,
         feasibility,
         year=year,
-        form_to_btype_callback=sim.get_injectable("form_to_btype_f"),
+        form_to_btype_callback=form_to_btype_func,
         add_more_columns_callback=add_extra_columns,
         **kwargs)
 
-    utils.add_parcel_output(new_buildings)
+    summary.add_parcel_output(new_buildings)
 
 
 @sim.model('non_residential_developer')
 def non_residential_developer(feasibility, jobs, buildings, parcels, year,
-                              settings):
+                              settings, summary, form_to_btype_func):
 
     kwargs = settings['non_residential_developer']
     new_buildings = utils.run_developer(
@@ -200,16 +185,16 @@ def non_residential_developer(feasibility, jobs, buildings, parcels, year,
         parcels.total_job_spaces,
         feasibility,
         year=year,
-        form_to_btype_callback=sim.get_injectable("form_to_btype_f"),
+        form_to_btype_callback=form_to_btype_func,
         add_more_columns_callback=add_extra_columns,
         residential=False,
         **kwargs)
 
-    utils.add_parcel_output(new_buildings)
+    summary.add_parcel_output(new_buildings)
 
 
 @sim.model("diagnostic_output")
-def diagnostic_output(households, buildings, parcels, zones, year):
+def diagnostic_output(households, buildings, parcels, zones, year, summary):
     households = households.to_frame()
     buildings = buildings.to_frame()
     parcels = parcels.to_frame()
@@ -247,21 +232,22 @@ def diagnostic_output(households, buildings, parcels, zones, year):
         buildings[buildings.general_type == "Industrial"].\
         groupby('zone_id').non_residential_price.quantile()
 
-    if "price_shifters" in sim.list_injectables():
-        zones["price_shifters"] = sim.get_injectable("price_shifters")
-
-    utils.add_simulation_output(zones, "diagnostic_outputs", year)
+    summary.add_zone_output(zones, "diagnostic_outputs", year)
 
 
 @sim.model("clear_cache")
 def clear_cache():
-    sim.clear_cache()
+    # don't want to clear injectable cache since it stores state
+    # from year to year
+    sim._TABLE_CACHE.clear()
+    sim._COLUMN_CACHE.clear()
+    # sim.clear_cache()
 
 
 # this method is used to push messages from urbansim to websites for live
 # exploration of simulation results
 @sim.model("pusher")
-def pusher(year, run_number, uuid, settings):
+def pusher(year, run_number, uuid, settings, summary):
     try:
         import pusher
     except:
@@ -275,8 +261,8 @@ def pusher(year, run_number, uuid, settings):
         secret=settings['pusher']['secret']
     )
     host = settings['pusher']['host']
-    sim_output = host+"runs/run{}_simulation_output.json".format(run_number)
-    parcel_output = host+"runs/run{}_parcel_output.csv".format(run_number)
+    sim_output = host+summary.zone_indicator_file
+    parcel_output = host+summary.parcel_indicator_file
     p['urbansim'].trigger('simulation_year_completed',
                           {'year': year,
                            'region': settings['pusher']['region'],
