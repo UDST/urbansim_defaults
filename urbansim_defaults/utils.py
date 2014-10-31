@@ -199,7 +199,7 @@ def to_frame(tbl, join_tbls, cfg, additional_columns=[]):
 def yaml_to_class(cfg):
     """
     Convert the name of a yaml file and get the Python class of the model
-    associated with the configuratoin
+    associated with the configuration
 
     Parameters
     ----------
@@ -344,11 +344,25 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
           len(vacant_units[vacant_units < 0])
 
     vacant_units = vacant_units[vacant_units > 0]
-    units = locations_df.loc[np.repeat(vacant_units.index.values,
-                             vacant_units.values.astype('int'))].reset_index()
+
+    # sometimes there are vacant units for buildings that are not in the
+    # locations_df, which happens for reasons explained in the warning below
+    indexes = np.repeat(vacant_units.index.values,
+                        vacant_units.values.astype('int'))
+    isin = pd.Series(indexes).isin(locations_df.index)
+    missing = len(isin[isin == False])
+    indexes = indexes[isin.values]
+    units = locations_df.loc[indexes].reset_index()
+    check_nas(units)
 
     print "    for a total of %d temporarily empty units" % vacant_units.sum()
     print "    in %d buildings total in the region" % len(vacant_units)
+
+    if missing > 0:
+        print "WARNING: %d indexes aren't found in the locations df -" % \
+            missing
+        print "    this is usually because of a few records that don't join "
+        print "    correctly between the locations df and the aggregations tables"
 
     movers = choosers_df[choosers_df[out_fname] == -1]
     print "There are %d total movers for this LCM" % len(movers)
