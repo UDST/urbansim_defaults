@@ -557,7 +557,7 @@ def _print_number_unplaced(df, fieldname):
 
 def run_feasibility(parcels, parcel_price_callback,
                     parcel_use_allowed_callback, residential_to_yearly=True,
-                    parcel_filter=None,
+                    parcel_filter=None, only_built=True,
                     config=None, pass_through=[]):
     """
     Execute development feasibility on all parcels
@@ -617,7 +617,8 @@ def run_feasibility(parcels, parcel_price_callback,
     for form in pf.config.forms:
         print "Computing feasibility for form %s" % form
         allowed = parcel_use_allowed_callback(form).loc[df.index]
-        d[form] = pf.lookup(form, df[allowed], pass_through=pass_through)
+        d[form] = pf.lookup(form, df[allowed], only_built=only_built,
+                            pass_through=pass_through)
         if residential_to_yearly and "residential" in pass_through:
             d[form]["residential"] /= pf.config.cap_rate
 
