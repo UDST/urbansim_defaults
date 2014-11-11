@@ -395,7 +395,7 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
             **kwargs)
 
         # we will only get back new prices for those alternatives
-        # that pass the filter - might need to specify the table in 
+        # that pass the filter - might need to specify the table in
         # order to get the complete index of possible submarkets
         submarket_table = enable_supply_correction.get("submarket_table", None)
         if submarket_table is not None:
@@ -411,7 +411,7 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         print submarkets_ratios.describe()
         # we want new prices on the buildings, not on the units, so apply
         # shifters directly to buildings and ignore unit prices
-        sim.add_column(buildings.name, 
+        sim.add_column(buildings.name,
                        price_col+"_hedonic", buildings[price_col])
         new_prices = buildings[price_col] * \
             submarkets_ratios.loc[buildings[submarket_col]].values
@@ -436,7 +436,7 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
 
     choosers.update_col_from_series(out_fname, new_buildings)
     _print_number_unplaced(choosers, out_fname)
-    
+
     if enable_supply_correction is not None:
         new_prices = buildings[price_col]
         if "clip_final_price_low" in enable_supply_correction:
@@ -446,7 +446,7 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
             new_prices = new_prices.clip(upper=enable_supply_correction[
                 "clip_final_price_high"])
         buildings.update_col_from_series(price_col, new_prices)
-            
+
     vacant_units = buildings[vacant_fname]
     print "    and there are now %d empty units" % vacant_units.sum()
     print "    and %d overfull buildings" % len(vacant_units[vacant_units < 0])
@@ -557,7 +557,7 @@ def _print_number_unplaced(df, fieldname):
 
 def run_feasibility(parcels, parcel_price_callback,
                     parcel_use_allowed_callback, residential_to_yearly=True,
-                    parcel_filter=None, only_built=True,
+                    parcel_filter=None, only_built=True, forms_to_test=None,
                     config=None, pass_through=[]):
     """
     Execute development feasibility on all parcels
@@ -581,6 +581,12 @@ def run_feasibility(parcels, parcel_price_callback,
         consideration - is typically used to remove parcels with buildings
         older than a certain date for historical preservation, but is
         generally useful
+    only_built : boolean
+        Only return those buildings that are profitable - only those buildings
+        that "will be built"
+    forms_to_test : list of strings (optional)
+        Pass the list of the names of forms to test for feasibility - if set to
+        None will use all the forms available in ProFormaConfig
     config : SqFtProFormaConfig configuration object.  Optional.  Defaults to
         None
     pass_through : list of strings
@@ -614,7 +620,8 @@ def run_feasibility(parcels, parcel_price_callback,
     print df[pf.config.uses].describe()
 
     d = {}
-    for form in pf.config.forms:
+    forms = forms_to_test or pf.config.forms
+    for form in forms:
         print "Computing feasibility for form %s" % form
         allowed = parcel_use_allowed_callback(form).loc[df.index]
         d[form] = pf.lookup(form, df[allowed], only_built=only_built,
