@@ -112,13 +112,13 @@ def parcel_acres(parcels):
     # parcel_size needs to be in sqft
     return parcels.parcel_size / 43560.0
 
-@sim.column('parcels', 'total_residential_units', cache=True)
+@sim.column('parcels', 'total_residential_units', cache=False)
 def total_residential_units(parcels, buildings):
     return buildings.residential_units.groupby(buildings.parcel_id).sum().\
         reindex(parcels.index).fillna(0)
 
 
-@sim.column('parcels', 'total_job_spaces', cache=True)
+@sim.column('parcels', 'total_job_spaces', cache=False)
 def total_job_spaces(parcels, buildings):
     return buildings.job_spaces.groupby(buildings.parcel_id).sum().\
         reindex(parcels.index).fillna(0)
