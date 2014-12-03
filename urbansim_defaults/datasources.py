@@ -66,14 +66,14 @@ def aggregations(settings):
     	settings["aggregation_tables"] is None:
     	return []
     return [sim.get_table(tbl) for tbl in settings["aggregation_tables"]]
-    
-    
+
+
 @sim.injectable('building_sqft_per_job', cache=True)
 def building_sqft_per_job(settings):
     return settings['building_sqft_per_job']
 
 
-@sim.table_source('buildings')
+@sim.table('buildings', cache=True)
 def buildings(store, households, jobs, building_sqft_per_job, settings):
     df = store['buildings']
 
@@ -101,24 +101,24 @@ def buildings(store, households, jobs, building_sqft_per_job, settings):
         fill_nas_cfg = fill_nas_cfg.get("buildings", None)
     if fill_nas_cfg is not None:
         df = utils.table_reprocess(fill_nas_cfg, df)
-        
+
 
     return df
 
 
-@sim.table_source('household_controls')
+@sim.table('household_controls', cache=True)
 def household_controls():
     df = pd.read_csv(os.path.join(misc.data_dir(), "household_controls.csv"))
     return df.set_index('year')
 
 
-@sim.table_source('employment_controls')
+@sim.table('employment_controls', cache=True)
 def employment_controls():
     df = pd.read_csv(os.path.join(misc.data_dir(), "employment_controls.csv"))
     return df.set_index('year')
 
 
-@sim.table_source('jobs')
+@sim.table('jobs', cache=True)
 def jobs(store, settings):
     df = store['jobs']
 
@@ -133,7 +133,7 @@ def jobs(store, settings):
     return df
 
 
-@sim.table_source('households')
+@sim.table('households', cache=True)
 def households(store, settings):
     df = store['households']
 
@@ -144,32 +144,32 @@ def households(store, settings):
     fill_nas_cfg = settings.get("table_reprocess", None)
     if fill_nas_cfg is not None:
 	    fill_nas_cfg = fill_nas_cfg.get("households", None)
-    if fill_nas_cfg is not None:	    
+    if fill_nas_cfg is not None:
         df = utils.table_reprocess(fill_nas_cfg, df)
 
     return df
 
 
-@sim.table_source('parcels')
+@sim.table('parcels', cache=True)
 def parcels(store):
     df = store['parcels']
     return df
 
 
 # these are shapes - "zones" in the bay area
-@sim.table_source('zones')
+@sim.table('zones', cache=True)
 def zones(store):
     df = store['zones']
     return df
 
 
 # these are dummy returns that last until accessibility runs
-@sim.table("nodes")
+@sim.table("nodes", cache=True)
 def nodes():
     return pd.DataFrame()
 
 
-@sim.table_source("logsums")
+@sim.table("logsums", cache=True)
 def logsums(settings):
     logsums_index = settings.get("logsums_index_col", "taz")
     return pd.read_csv(os.path.join(misc.data_dir(),
