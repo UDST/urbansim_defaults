@@ -47,13 +47,15 @@ def job_spaces(buildings):
             buildings.sqft_per_job).fillna(0).astype('int')
 
 
-@sim.column('buildings', 'vacant_residential_units')
+@sim.column('buildings', 'vacant_residential_units',
+            cache=True, cache_scope='iteration')
 def vacant_residential_units(buildings, households):
     return buildings.residential_units.sub(
         households.building_id.value_counts(), fill_value=0)
 
 
-@sim.column('buildings', 'vacant_job_spaces')
+@sim.column('buildings', 'vacant_job_spaces',
+            cache=True, cache_scope='iteration')
 def vacant_job_spaces(buildings, jobs):
     return buildings.job_spaces.sub(
         jobs.building_id.value_counts(), fill_value=0)
@@ -112,13 +114,15 @@ def parcel_acres(parcels):
     # parcel_size needs to be in sqft
     return parcels.parcel_size / 43560.0
 
-@sim.column('parcels', 'total_residential_units', cache=False)
+@sim.column('parcels', 'total_residential_units',
+            cache=True, cache_scope='iteration')
 def total_residential_units(parcels, buildings):
     return buildings.residential_units.groupby(buildings.parcel_id).sum().\
         reindex(parcels.index).fillna(0)
 
 
-@sim.column('parcels', 'total_job_spaces', cache=False)
+@sim.column('parcels', 'total_job_spaces',
+            cache=True, cache_scope='iteration')
 def total_job_spaces(parcels, buildings):
     return buildings.job_spaces.groupby(buildings.parcel_id).sum().\
         reindex(parcels.index).fillna(0)
@@ -136,12 +140,14 @@ def zoned_du(parcels):
         reindex(parcels.index).fillna(0).round().astype('int')
 
 
-@sim.column('parcels', 'zoned_du_underbuild')
+@sim.column('parcels', 'zoned_du_underbuild',
+            cache=True, cache_scope='iteration')
 def zoned_du_underbuild(parcels):
     return (parcels.zoned_du - parcels.total_residential_units).clip(lower=0)
 
 
-@sim.column('parcels', 'ave_sqft_per_unit')
+@sim.column('parcels', 'ave_sqft_per_unit',
+            cache=True, cache_scope='iteration')
 def ave_sqft_per_unit(parcels, nodes, settings):
     if len(nodes) == 0:
         # if nodes isn't generated yet
@@ -154,19 +160,21 @@ def ave_sqft_per_unit(parcels, nodes, settings):
 
 
 # this just changes the column name for reverse compatibility
-@sim.column('parcels', 'ave_unit_size')
+@sim.column('parcels', 'ave_unit_size',
+            cache=True, cache_scope='iteration')
 def ave_unit_size(parcels):
     return parcels.ave_sqft_per_unit
 
 
-@sim.column('parcels', 'lot_size_per_unit')
+@sim.column('parcels', 'lot_size_per_unit',
+            cache=True, cache_scope='iteration')
 def log_size_per_unit(parcels):
     return parcels.parcel_size / parcels.total_residential_units.replace(0, 1)
 
 
 # returns the oldest building on the land and fills missing values with 9999 -
 # for use with historical preservation
-@sim.column('parcels', 'oldest_building')
+@sim.column('parcels', 'oldest_building', cache=True)
 def oldest_building(parcels, buildings):
     return buildings.year_built.groupby(buildings.parcel_id).min().\
         reindex(parcels.index).fillna(9999)

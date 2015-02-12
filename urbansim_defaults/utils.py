@@ -609,6 +609,7 @@ def run_feasibility(parcels, parcel_price_callback,
 
     if parcel_filter:
         df = df.query(parcel_filter)
+        print "{} records passed parcel filter".format(len(df))
 
     # add prices for each use
     for use in pf.config.uses:
@@ -638,7 +639,8 @@ def run_feasibility(parcels, parcel_price_callback,
 
 
 def run_developer(forms, agents, buildings, supply_fname, parcel_size,
-                  ave_unit_size, total_units, feasibility, year=None,
+                  ave_unit_size, total_units, total_spaces,
+                  feasibility, year=None,
                   target_vacancy=.1, form_to_btype_callback=None,
                   add_more_columns_callback=None, max_parcel_size=2000000,
                   residential=True, bldg_sqft_per_job=400.0,
@@ -663,8 +665,9 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
     ave_unit_size : Series
         Passed directly to dev.pick - average residential unit size
     total_units : Series
-        Passed directly to dev.pick - total current residential_units /
-        job_spaces
+        Passed directly to dev.pick - total current residential units
+    total_spaces : Series
+        Passed directly to dev.pick - total current job spaces
     feasibility : DataFrame Wrapper
         The output from feasibility above (the table called 'feasibility')
     year : int
@@ -712,11 +715,19 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
     print "{:,} feasible buildings before running developer".format(
           len(dev.feasibility))
 
+    # current units needs to take into account both residential and non-res
+    if residential:
+        # if residential, total units will be used, and 2 jobs equals a unit
+        total_units += total_spaces/2.0
+    else:
+        # if non-residential, total spaces will be used and a unit equals 2 jobs
+        total_spaces += total_units*2.0
+
     new_buildings = dev.pick(forms,
                              target_units,
                              parcel_size,
                              ave_unit_size,
-                             total_units,
+                             total_units if residential else total_spaces,
                              max_parcel_size=max_parcel_size,
                              min_unit_size=min_unit_size,
                              drop_after_build=True,
@@ -745,13 +756,24 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
     new_buildings["stories"] = new_buildings.stories.apply(np.ceil)
 
     ret_buildings = new_buildings
+    ret_buildings["net_residential_units"] = ret_buildings.residential_units -\
+        total_units.loc[ret_buildings.parcel_id].values
+    ret_buildings["net_job_spaces"] = ret_buildings.job_spaces -\
+        total_spaces.loc[ret_buildings.parcel_id].values
+
     if add_more_columns_callback is not None:
         new_buildings = add_more_columns_callback(new_buildings)
 
-    print "Adding {:,} buildings with {:,} {}".\
+    print "Adding {:,} buildings with {:,} {} and {:,} net units".\
         format(len(new_buildings),
                int(new_buildings[supply_fname].sum()),
-               supply_fname)
+               supply_fname,
+               int(new_buildings.net_units.sum()))
+
+    print "Sum of net residential units = {:,}".\
+        format(int(ret_buildings.net_residential_units.sum()))
+    print "Sum of net job spaces = {:,}".\
+        format(int(ret_buildings.net_job_spaces.sum()))
 
     print "{:,} feasible buildings after running developer".format(
           len(dev.feasibility))
@@ -765,9 +787,9 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
         drop_buildings = old_buildings[redev_buildings]
         old_buildings = old_buildings[np.logical_not(redev_buildings)]
         l2 = len(old_buildings)
-        if l2-l > 0:
+        if l-l2 > 0:
             print "Dropped {} buildings because they were redeveloped".\
-                format(l2-l)
+                format(l-l2)
 
         for tbl in unplace_agents:
             agents = sim.get_table(tbl)
