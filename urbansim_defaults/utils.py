@@ -1,5 +1,5 @@
 from urbansim.models import RegressionModel, SegmentedRegressionModel, \
-    MNLLocationChoiceModel, SegmentedMNLLocationChoiceModel, \
+    MNLDiscreteChoiceModel, SegmentedMNLDiscreteChoiceModel, \
     GrowthRateTransition, transition
 from urbansim.models.supplydemand import supply_and_demand
 from urbansim.developer import sqftproforma, developer
