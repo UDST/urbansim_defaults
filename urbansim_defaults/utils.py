@@ -215,8 +215,8 @@ def yaml_to_class(cfg):
     return {
         "regression": RegressionModel,
         "segmented_regression": SegmentedRegressionModel,
-        "locationchoice": MNLDiscreteChoiceModel,
-        "segmented_locationchoice": SegmentedMNLDiscreteChoiceModel
+        "discretechoice": MNLDiscreteChoiceModel,
+        "segmented_discretechoice": SegmentedMNLDiscreteChoiceModel
     }[model_type]
 
 
