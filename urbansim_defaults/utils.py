@@ -476,7 +476,7 @@ def simple_relocation(choosers, relocation_rate, fieldname):
     print "Total agents: %d" % len(choosers)
     _print_number_unplaced(choosers, fieldname)
 
-    print "Assinging for relocation..."
+    print "Assigning for relocation..."
     chooser_ids = np.random.choice(choosers.index, size=int(relocation_rate *
                                    len(choosers)), replace=False)
     choosers.update_col_from_series(fieldname,
