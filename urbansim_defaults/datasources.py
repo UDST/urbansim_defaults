@@ -23,7 +23,7 @@ def settings():
         return settings
 
 
-@sim.injectable('run_number')
+@sim.injectable('run_number', cache=True)
 def run_number():
     return misc.get_run_number()
 

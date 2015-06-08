@@ -1,5 +1,5 @@
 from urbansim.models import RegressionModel, SegmentedRegressionModel, \
-    MNLLocationChoiceModel, SegmentedMNLLocationChoiceModel, \
+    MNLDiscreteChoiceModel, SegmentedMNLDiscreteChoiceModel, \
     GrowthRateTransition, transition
 from urbansim.models.supplydemand import supply_and_demand
 from urbansim.developer import sqftproforma, developer
@@ -215,8 +215,8 @@ def yaml_to_class(cfg):
     return {
         "regression": RegressionModel,
         "segmented_regression": SegmentedRegressionModel,
-        "locationchoice": MNLLocationChoiceModel,
-        "segmented_locationchoice": SegmentedMNLLocationChoiceModel
+        "discretechoice": MNLDiscreteChoiceModel,
+        "segmented_discretechoice": SegmentedMNLDiscreteChoiceModel
     }[model_type]
 
 
@@ -476,7 +476,7 @@ def simple_relocation(choosers, relocation_rate, fieldname):
     print "Total agents: %d" % len(choosers)
     _print_number_unplaced(choosers, fieldname)
 
-    print "Assinging for relocation..."
+    print "Assigning for relocation..."
     chooser_ids = np.random.choice(choosers.index, size=int(relocation_rate *
                                    len(choosers)), replace=False)
     choosers.update_col_from_series(fieldname,
