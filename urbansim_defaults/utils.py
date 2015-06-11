@@ -771,7 +771,12 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
 
         for tbl in unplace_agents:
             agents = sim.get_table(tbl)
-            agents = agents.to_frame(agents.local_columns)
+            cols = agents.local_columns
+            if "building_id" not in cols:
+                # if it's a unit-level model, need to add building_id
+                # explicitly
+                cols += ["building_id"]
+            agents = agents.to_frame(cols)
             displaced_agents = agents.building_id.isin(drop_buildings.index)
             print "Unplaced {} before: {}".format(tbl, len(agents.query(
                                                   "building_id == -1")))
@@ -806,7 +811,9 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
 
         sim.add_table("residential_units", all_units)
 
-        return ret_buildings, new_units
+        return ret_buildings
+        # pondered returning ret_buildings, new_units but users can get_table
+        # the units if they want them - better to avoid breaking the api
 
     return ret_buildings
 
