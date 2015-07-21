@@ -98,7 +98,7 @@ def jobs_transition(jobs, employment_controls, year, settings):
 
 
 @sim.model('simple_jobs_transition')
-def jobs_transition(jobs, settings):
+def simple_jobs_transition(jobs, settings):
     rate = settings['rates']['simple_jobs_transition']
     return utils.simple_transition(jobs, rate, "building_id")
 
@@ -236,46 +236,4 @@ def diagnostic_output(households, buildings, parcels, zones, year, summary):
         groupby('zone_id').non_residential_price.quantile()
 
     summary.add_zone_output(zones, "diagnostic_outputs", year)
-
-
-@sim.model("clear_cache")
-def clear_cache():
-    # don't want to clear injectable cache since it stores state
-    # from year to year
-    sim._TABLE_CACHE.clear()
-    sim._COLUMN_CACHE.clear()
-    # sim.clear_cache()
-
-
-# this method is used to push messages from urbansim to websites for live
-# exploration of simulation results
-@sim.model("pusher")
-def pusher(year, run_number, uuid, settings, summary):
-    try:
-        import pusher
-    except:
-        # if pusher not installed, just return
-        return
-    import socket
-
-    p = pusher.Pusher(
-        app_id='90082',
-        key=settings['pusher']['key'],
-        secret=settings['pusher']['secret']
-    )
-    host = settings['pusher']['host']
-    sim_output = host+summary.zone_indicator_file
-    parcel_output = host+summary.parcel_indicator_file
-    p['urbansim'].trigger('simulation_year_completed',
-                          {'year': year,
-                           'region': settings['pusher']['region'],
-                           'run_number': run_number,
-                           'hostname': socket.gethostname(),
-                           'uuid': uuid,
-                           'time': time.ctime(),
-                           'sim_output': sim_output,
-                           'field_name': 'residential_units',
-                           'table': 'diagnostic_outputs',
-                           'scale': 'jenks',
-                           'parcel_output': parcel_output})
 
