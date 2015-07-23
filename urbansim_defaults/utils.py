@@ -637,6 +637,35 @@ def run_feasibility(parcels, parcel_price_callback,
     sim.add_table("feasibility", far_predictions)
 
 
+def _remove_developed_buildings(old_buildings, new_buildings, unplace_agents):
+    redev_buildings = old_buildings.parcel_id.isin(new_buildings.parcel_id)
+    l = len(old_buildings)
+    drop_buildings = old_buildings[redev_buildings]
+    old_buildings = old_buildings[np.logical_not(redev_buildings)]
+    l2 = len(old_buildings)
+    if l2-l > 0:
+        print "Dropped {} buildings because they were redeveloped".\
+            format(l2-l)
+
+    for tbl in unplace_agents:
+        agents = sim.get_table(tbl)
+        cols = agents.local_columns
+        if "building_id" not in cols:
+            # if it's a unit-level model, need to add building_id
+            # explicitly
+            cols += ["building_id"]
+        agents = agents.to_frame(cols)
+        displaced_agents = agents.building_id.isin(drop_buildings.index)
+        print "Unplaced {} before: {}".format(tbl, len(agents.query(
+                                              "building_id == -1")))
+        agents.building_id[displaced_agents] = -1
+        print "Unplaced {} after: {}".format(tbl, len(agents.query(
+                                             "building_id == -1")))
+        sim.add_table(tbl, agents)
+
+    return old_buildings
+
+
 def run_developer(forms, agents, buildings, supply_fname, parcel_size,
                   ave_unit_size, total_units, feasibility, year=None,
                   target_vacancy=.1, form_to_btype_callback=None,
@@ -760,30 +789,8 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
     new_buildings = new_buildings[buildings.local_columns]
 
     if remove_developed_buildings:
-        redev_buildings = old_buildings.parcel_id.isin(new_buildings.parcel_id)
-        l = len(old_buildings)
-        drop_buildings = old_buildings[redev_buildings]
-        old_buildings = old_buildings[np.logical_not(redev_buildings)]
-        l2 = len(old_buildings)
-        if l2-l > 0:
-            print "Dropped {} buildings because they were redeveloped".\
-                format(l2-l)
-
-        for tbl in unplace_agents:
-            agents = sim.get_table(tbl)
-            cols = agents.local_columns
-            if "building_id" not in cols:
-                # if it's a unit-level model, need to add building_id
-                # explicitly
-                cols += ["building_id"]
-            agents = agents.to_frame(cols)
-            displaced_agents = agents.building_id.isin(drop_buildings.index)
-            print "Unplaced {} before: {}".format(tbl, len(agents.query(
-                                                  "building_id == -1")))
-            agents.building_id[displaced_agents] = -1
-            print "Unplaced {} after: {}".format(tbl, len(agents.query(
-                                                 "building_id == -1")))
-            sim.add_table(tbl, agents)
+        old_buildings = \
+            _remove_developed_buildings(old_buildings, new_buildings, unplace_agents)
 
     all_buildings = dev.merge(old_buildings, new_buildings)
 
@@ -816,6 +823,37 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
         # the units if they want them - better to avoid breaking the api
 
     return ret_buildings
+
+
+def scheduled_development_events(buildings, new_buildings,
+                                 remove_developed_buildings=True,
+                                 unplace_agents=['households', 'jobs']):
+    """
+    This acts somewhat like developer, but is not dependent on real estate feasibility
+    in order to build - these are buildings that we force to be built, usually because
+    we know they are scheduled to be built at some point in the future because of our
+    knowledge of existing permits (or maybe we just read the newspaper).
+
+    Parameters
+    ----------
+    new_buildings : DataFrame
+        The new buildings to add to out buildings table.  They should have the same
+        columns as the local columns in the buildings table.
+    """
+
+    print "Adding {:,} buildings as scheduled development events".format(
+          len(new_buildings))
+
+    old_buildings = buildings.to_frame(buildings.local_columns)
+    new_buildings = new_buildings[buildings.local_columns]
+
+    if remove_developed_buildings:
+        old_buildings = \
+            _remove_developed_buildings(old_buildings, new_buildings, unplace_agents)
+
+    all_buildings = developer.Developer.merge(old_buildings, new_buildings)
+
+    sim.add_table("buildings", all_buildings)
 
 
 class SimulationSummaryData(object):
