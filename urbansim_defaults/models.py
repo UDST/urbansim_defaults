@@ -198,6 +198,20 @@ def non_residential_developer(feasibility, jobs, buildings, parcels, year,
     summary.add_parcel_output(new_buildings)
 
 
+@orca.step("scheduled_development_events")
+def scheduled_development_events(buildings, development_projects, summary, year):
+    dps = development_projects.to_frame().query("year_built == %d" % year)
+
+    if len(dps) == 0:
+        return
+
+    new_buildings = utils.scheduled_development_events(buildings, dps,
+                                       remove_developed_buildings=True,
+                                       unplace_agents=['households', 'jobs'])
+
+    summary.add_parcel_output(new_buildings)
+
+
 @orca.step("diagnostic_output")
 def diagnostic_output(households, buildings, parcels, zones, year, summary):
     households = households.to_frame()
@@ -226,6 +240,8 @@ def diagnostic_output(households, buildings, parcels, zones, year, summary):
     zones['average_income'] = households.groupby('zone_id').income.quantile()
     zones['household_size'] = households.groupby('zone_id').persons.quantile()
 
+    zones['building_count'] = buildings.\
+        query('general_type == "Residential"').groupby('zone_id').size()
     zones['residential_price'] = buildings.\
         query('general_type == "Residential"').groupby('zone_id').\
         residential_price.quantile()

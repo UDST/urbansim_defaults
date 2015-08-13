@@ -14,6 +14,11 @@ warnings.filterwarnings('ignore', category=pd.io.pytables.PerformanceWarning)
 pd.options.mode.chained_assignment = None
 
 
+@orca.injectable('year')
+def year(iter_var):
+    return iter_var
+
+
 @orca.injectable('settings', cache=True)
 def settings():
     with open(os.path.join(misc.configs_dir(), "settings.yaml")) as f:
