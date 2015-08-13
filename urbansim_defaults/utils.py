@@ -836,6 +836,8 @@ def scheduled_development_events(buildings, new_buildings,
 
     Parameters
     ----------
+    buildings : DataFrame wrapper
+        Just pass in the building dataframe wrapper
     new_buildings : DataFrame
         The new buildings to add to out buildings table.  They should have the same
         columns as the local columns in the buildings table.
@@ -843,17 +845,24 @@ def scheduled_development_events(buildings, new_buildings,
 
     print "Adding {:,} buildings as scheduled development events".format(
           len(new_buildings))
-
+    
     old_buildings = buildings.to_frame(buildings.local_columns)
     new_buildings = new_buildings[buildings.local_columns]
+    
+    print "Res units before: {:,}".format(old_buildings.residential_units.sum())
+    print "Non-res sqft before: {:,}".format(old_buildings.non_residential_sqft.sum())
 
     if remove_developed_buildings:
         old_buildings = \
             _remove_developed_buildings(old_buildings, new_buildings, unplace_agents)
 
     all_buildings = developer.Developer.merge(old_buildings, new_buildings)
+    
+    print "Res units after: {:,}".format(all_buildings.residential_units.sum())
+    print "Non-res sqft after: {:,}".format(all_buildings.non_residential_sqft.sum())
 
     sim.add_table("buildings", all_buildings)
+    return new_buildings
 
 
 class SimulationSummaryData(object):
