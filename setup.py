@@ -4,16 +4,14 @@ setup(
     name='urbansim_defaults',
     version='0.1dev',
     description='Installs and runs the urbansim defaults.',
-    author='Synthicity',
-    author_email='support@synthicity.com',
+    author='Autodesk',
+    author_email='udst@autodesk.com',
     license='BSD',
-    url='https://github.com/synthicity/urbansim_defaults',
+    url='https://github.com/udst/urbansim_defaults',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Programming Language :: Python :: 2.7',
         'License :: OSI Approved :: BSD License'
     ],
-    packages=find_packages(exclude=['*.tests']),
-    install_requires=[
-    ]
+    packages=find_packages(exclude=['*.tests'])
 )

@@ -1,13 +1,14 @@
+import json
+
+import orca
+import numpy as np
+import pandas as pd
 from urbansim.models import RegressionModel, SegmentedRegressionModel, \
     MNLDiscreteChoiceModel, SegmentedMNLDiscreteChoiceModel, \
     GrowthRateTransition, transition
 from urbansim.models.supplydemand import supply_and_demand
 from urbansim.developer import sqftproforma, developer
-import numpy as np
-import pandas as pd
-import urbansim.sim.simulation as sim
 from urbansim.utils import misc
-import json
 
 
 def conditional_upzone(scenario, scenario_inputs, attr_name, upzone_name):
@@ -33,11 +34,11 @@ def conditional_upzone(scenario, scenario_inputs, attr_name, upzone_name):
     The new zoning per parcel which is increased if the scenario based
     zoning is higher than the baseline zoning
     """
-    zoning_baseline = sim.get_table(
+    zoning_baseline = orca.get_table(
         scenario_inputs["baseline"]["zoning_table_name"])
     attr = zoning_baseline[attr_name]
     if scenario != "baseline":
-        zoning_scenario = sim.get_table(
+        zoning_scenario = orca.get_table(
             scenario_inputs[scenario]["zoning_table_name"])
         upzone = zoning_scenario[upzone_name].dropna()
         attr = pd.concat([attr, upzone], axis=1).max(skipna=True, axis=1)
@@ -188,8 +189,8 @@ def to_frame(tbl, join_tbls, cfg, additional_columns=[]):
     tables = [t for t in tables if t is not None]
     columns = misc.column_list(tables, cfg.columns_used()) + additional_columns
     if len(tables) > 1:
-        df = sim.merge_tables(target=tables[0].name,
-                              tables=tables, columns=columns)
+        df = orca.merge_tables(target=tables[0].name,
+                               tables=tables, columns=columns)
     else:
         df = tables[0].to_frame(columns)
     check_nas(df)
@@ -384,7 +385,7 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
 
         multiplier_func = enable_supply_correction.get("multiplier_func", None)
         if multiplier_func is not None:
-            multiplier_func = sim.get_injectable(multiplier_func)
+            multiplier_func = orca.get_injectable(multiplier_func)
 
         kwargs = enable_supply_correction.get('kwargs', {})
         new_prices, submarkets_ratios = supply_and_demand(
@@ -403,9 +404,9 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         submarket_table = enable_supply_correction.get("submarket_table", None)
         if submarket_table is not None:
             submarkets_ratios = submarkets_ratios.reindex(
-                sim.get_table(submarket_table).index).fillna(1)
+                orca.get_table(submarket_table).index).fillna(1)
             # write final shifters to the submarket_table for use in debugging
-            sim.get_table(submarket_table)["price_shifters"] = submarkets_ratios
+            orca.get_table(submarket_table)["price_shifters"] = submarkets_ratios
 
         print "Running supply and demand"
         print "Simulated Prices"
@@ -414,8 +415,8 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         print submarkets_ratios.describe()
         # we want new prices on the buildings, not on the units, so apply
         # shifters directly to buildings and ignore unit prices
-        sim.add_column(buildings.name,
-                       price_col+"_hedonic", buildings[price_col])
+        orca.add_column(buildings.name,
+                        price_col+"_hedonic", buildings[price_col])
         new_prices = buildings[price_col] * \
             submarkets_ratios.loc[buildings[submarket_col]].values
         buildings.update_col_from_series(price_col, new_prices)
@@ -511,7 +512,7 @@ def simple_transition(tbl, rate, location_fname):
     print "%d agents after transition" % len(df.index)
 
     df.loc[added, location_fname] = -1
-    sim.add_table(tbl.name, df)
+    orca.add_table(tbl.name, df)
 
 
 def full_transition(agents, agent_controls, year, settings, location_fname):
@@ -550,7 +551,7 @@ def full_transition(agents, agent_controls, year, settings, location_fname):
     new, added_hh_idx, new_linked = model.transition(hh, year)
     new.loc[added_hh_idx, location_fname] = -1
     print "Total agents after transition: {}".format(len(new))
-    sim.add_table(agents.name, new)
+    orca.add_table(agents.name, new)
 
 
 def _print_number_unplaced(df, fieldname):
@@ -634,7 +635,7 @@ def run_feasibility(parcels, parcel_price_callback,
 
     far_predictions = pd.concat(d.values(), keys=d.keys(), axis=1)
 
-    sim.add_table("feasibility", far_predictions)
+    orca.add_table("feasibility", far_predictions)
 
 
 def _remove_developed_buildings(old_buildings, new_buildings, unplace_agents):
@@ -648,7 +649,7 @@ def _remove_developed_buildings(old_buildings, new_buildings, unplace_agents):
             format(l2-l)
 
     for tbl in unplace_agents:
-        agents = sim.get_table(tbl)
+        agents = orca.get_table(tbl)
         cols = agents.local_columns
         if "building_id" not in cols:
             # if it's a unit-level model, need to add building_id
@@ -661,7 +662,7 @@ def _remove_developed_buildings(old_buildings, new_buildings, unplace_agents):
         agents.building_id[displaced_agents] = -1
         print "Unplaced {} after: {}".format(tbl, len(agents.query(
                                              "building_id == -1")))
-        sim.add_table(tbl, agents)
+        orca.add_table(tbl, agents)
 
     return old_buildings
 
@@ -752,7 +753,7 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
                              residential=residential,
                              bldg_sqft_per_job=bldg_sqft_per_job)
 
-    sim.add_table("feasibility", dev.feasibility)
+    orca.add_table("feasibility", dev.feasibility)
 
     if new_buildings is None:
         return
@@ -794,7 +795,7 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
 
     all_buildings = dev.merge(old_buildings, new_buildings)
 
-    sim.add_table("buildings", all_buildings)
+    orca.add_table("buildings", all_buildings)
 
     if "residential_units" in sim.list_tables() and residential:
         # need to add units to the units table as well
@@ -1019,7 +1020,7 @@ class SimulationSummaryData(object):
         if add_xy is not None:
             x_name, y_name = add_xy["x_col"], add_xy["y_col"]
             xy_joinname = add_xy["foreign_key"]
-            xy_df = sim.get_table(add_xy["xy_table"])
+            xy_df = orca.get_table(add_xy["xy_table"])
             po[x_name] = misc.reindex(xy_df[x_name], po[xy_joinname])
             po[y_name] = misc.reindex(xy_df[y_name], po[xy_joinname])
 
