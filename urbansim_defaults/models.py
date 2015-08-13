@@ -198,7 +198,7 @@ def non_residential_developer(feasibility, jobs, buildings, parcels, year,
     summary.add_parcel_output(new_buildings)
 
 
-@orca.model("scheduled_development_events")
+@orca.step("scheduled_development_events")
 def scheduled_development_events(buildings, development_projects, summary, year):
     dps = development_projects.to_frame().query("year_built == %d" % year)
 

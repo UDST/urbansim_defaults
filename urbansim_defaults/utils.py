@@ -797,9 +797,9 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
 
     orca.add_table("buildings", all_buildings)
 
-    if "residential_units" in sim.list_tables() and residential:
+    if "residential_units" in orca.list_tables() and residential:
         # need to add units to the units table as well
-        old_units = sim.get_table("residential_units")
+        old_units = orca.get_table("residential_units")
         old_units = old_units.to_frame(old_units.local_columns)
         new_units = pd.DataFrame({
             "unit_residential_price": 0,
@@ -817,7 +817,7 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
         all_units = dev.merge(old_units, new_units)
         all_units.index.name = "unit_id"
 
-        sim.add_table("residential_units", all_units)
+        orca.add_table("residential_units", all_units)
 
         return ret_buildings
         # pondered returning ret_buildings, new_units but users can get_table
@@ -862,7 +862,7 @@ def scheduled_development_events(buildings, new_buildings,
     print "Res units after: {:,}".format(all_buildings.residential_units.sum())
     print "Non-res sqft after: {:,}".format(all_buildings.non_residential_sqft.sum())
 
-    sim.add_table("buildings", all_buildings)
+    orca.add_table("buildings", all_buildings)
     return new_buildings
 
 
