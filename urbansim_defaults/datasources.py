@@ -29,7 +29,7 @@ def settings():
         return settings
 
 
-@orca.injectable('run_number')
+@orca.injectable('run_number', cache=True)
 def run_number():
     return misc.get_run_number()
 
