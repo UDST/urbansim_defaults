@@ -565,7 +565,8 @@ def _print_number_unplaced(df, fieldname):
 
 
 # COMMENTING OUT LINES THAT ASSUME A BUILDING FORM OR USE TYPE CALLED 'RESIDENTIAL'
-# WE'LL NEED TO FIX THIS MORE CLEANLY LATER  - SAM
+# (which are only used for cap rate computations, so shouldn't be needed) --
+# we'll need to fix this more cleanly later  - SAM
 def run_feasibility(parcels, parcel_price_callback,
                     parcel_use_allowed_callback, residential_to_yearly=True,
                     parcel_filter=None, only_built=True, forms_to_test=None,
