@@ -126,7 +126,7 @@ def total_job_spaces(parcels, buildings):
         reindex(parcels.index).fillna(0)
 
 
-@orca.column('parcels', 'total_sqft', cache=True)
+@orca.column('parcels', 'total_sqft', cache=False)
 def total_sqft(parcels, buildings):
     return buildings.building_sqft.groupby(buildings.parcel_id).sum().\
         reindex(parcels.index).fillna(0)
