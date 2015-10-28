@@ -673,7 +673,8 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
                   add_more_columns_callback=None, max_parcel_size=2000000,
                   residential=True, bldg_sqft_per_job=400.0,
                   min_unit_size=400, remove_developed_buildings=True,
-                  unplace_agents=['households', 'jobs']):
+                  unplace_agents=['households', 'jobs'],
+                  num_units_to_build=None):
     """
     Run the developer model to pick and build buildings
 
@@ -721,10 +722,15 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
         as ave_unit_size does)
     remove_redeveloped_buildings : optional, boolean (default True)
         Remove all buildings on the parcels which are being developed on
-    unplace_agents : optional : list of strings (default ['households', 'jobs'])
+    unplace_agents : optional , list of strings (default ['households', 'jobs'])
         For all tables in the list, will look for field building_id and set
         it to -1 for buildings which are removed - only executed if
         remove_developed_buildings is true
+    num_units_to_build: optional, int 
+        If num_units_to_build is passed, build this many units rather than
+        computing it internally by using the length of agents adn the sum of
+        the relevant supply columin - this trusts the caller to know how to compute
+        this.
 
     Returns
     -------
@@ -734,7 +740,7 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
 
     dev = developer.Developer(feasibility.to_frame())
 
-    target_units = dev.\
+    target_units = num_units_to_build or dev.\
         compute_units_to_build(len(agents),
                                buildings[supply_fname].sum(),
                                target_vacancy)
