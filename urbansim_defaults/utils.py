@@ -41,7 +41,12 @@ def conditional_upzone(scenario, scenario_inputs, attr_name, upzone_name):
         zoning_scenario = orca.get_table(
             scenario_inputs[scenario]["zoning_table_name"])
         upzone = zoning_scenario[upzone_name].dropna()
-        attr = pd.concat([attr, upzone], axis=1).max(skipna=True, axis=1)
+        # need to leave nas as nas - if the density is unrestricted before
+        # it should be unrestricted now - so nas in the first series need
+        # to be left, but nas in the second series need to be ignored
+        # there might be a better way to express this
+        attr = pd.concat([attr, upzone.fillna(attr)], axis=1).\
+            max(skipna=True, axis=1)
     return attr
 
 
@@ -562,7 +567,7 @@ def _print_number_unplaced(df, fieldname):
 def run_feasibility(parcels, parcel_price_callback,
                     parcel_use_allowed_callback, residential_to_yearly=True,
                     parcel_filter=None, only_built=True, forms_to_test=None,
-                    config=None, pass_through=[]):
+                    config=None, pass_through=[], simple_zoning=False):
     """
     Execute development feasibility on all parcels
 
@@ -597,6 +602,10 @@ def run_feasibility(parcels, parcel_price_callback,
         Will be passed to the feasibility lookup function - is used to pass
         variables from the parcel dataframe to the output dataframe, usually
         for debugging
+    simple_zoning: boolean, optional
+        This can be set to use only max_dua for residential and max_far for
+        non-residential.  This can be handy if you want to deal with zoning
+        outside of the developer model.
 
     Returns
     -------
@@ -628,7 +637,19 @@ def run_feasibility(parcels, parcel_price_callback,
     for form in forms:
         print "Computing feasibility for form %s" % form
         allowed = parcel_use_allowed_callback(form).loc[df.index]
-        d[form] = pf.lookup(form, df[allowed], only_built=only_built,
+
+        newdf = df[allowed]
+        if simple_zoning:
+            if form == "residential":
+                # these are new computed in the effective max_dua method
+                newdf["max_far"] = pd.Series()
+                newdf["max_height"] = pd.Series()
+            else:
+                # these are new computed in the effective max_far method
+                newdf["max_dua"] = pd.Series()
+                newdf["max_height"] = pd.Series()
+
+        d[form] = pf.lookup(form, newdf, only_built=only_built,
                             pass_through=pass_through)
         if residential_to_yearly and "residential" in pass_through:
             d[form]["residential"] /= pf.config.cap_rate
