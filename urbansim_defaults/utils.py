@@ -663,6 +663,13 @@ def _remove_developed_buildings(old_buildings, new_buildings, unplace_agents):
     redev_buildings = old_buildings.parcel_id.isin(new_buildings.parcel_id)
     l = len(old_buildings)
     drop_buildings = old_buildings[redev_buildings]
+
+    if "dropped_buildings" in orca.orca._TABLES:
+        prev_drops = orca.get_table("dropped_buildings").to_frame()
+        orca.add_table("dropped_buildings", pd.concat([drop_buildings, prev_drops]))
+    else:
+        orca.add_table("dropped_buildings", drop_buildings)
+
     old_buildings = old_buildings[np.logical_not(redev_buildings)]
     l2 = len(old_buildings)
     if l2-l > 0:
