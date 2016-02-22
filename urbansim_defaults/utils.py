@@ -677,20 +677,13 @@ def _remove_developed_buildings(old_buildings, new_buildings, unplace_agents):
             format(l2-l)
 
     for tbl in unplace_agents:
-        agents = orca.get_table(tbl)
-        cols = agents.local_columns
-        if "building_id" not in cols:
-            # if it's a unit-level model, need to add building_id
-            # explicitly
-            cols += ["building_id"]
-        agents = agents.to_frame(cols)
+        agents = orca.get_table(tbl).local
         displaced_agents = agents.building_id.isin(drop_buildings.index)
         print "Unplaced {} before: {}".format(tbl, len(agents.query(
                                               "building_id == -1")))
         agents.building_id[displaced_agents] = -1
         print "Unplaced {} after: {}".format(tbl, len(agents.query(
                                              "building_id == -1")))
-        orca.add_table(tbl, agents)
 
     return old_buildings
 
