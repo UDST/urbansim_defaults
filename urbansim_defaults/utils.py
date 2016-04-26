@@ -820,7 +820,9 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
         old_buildings = \
             _remove_developed_buildings(old_buildings, new_buildings, unplace_agents)
 
-    all_buildings = dev.merge(old_buildings, new_buildings)
+    all_buildings, new_index = dev.merge(old_buildings, new_buildings,
+                                         return_index=True)
+    ret_buildings.index = new_index
 
     orca.add_table("buildings", all_buildings)
 
