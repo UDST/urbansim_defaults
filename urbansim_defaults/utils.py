@@ -431,7 +431,7 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
     if len(movers) > vacant_units.sum():
         print "WARNING: Not enough locations for movers"
         print "    reducing locations to size of movers for performance gain"
-        movers = movers.head(vacant_units.sum())
+        movers = movers.head(int(vacant_units.sum()))
 
     new_units, _ = yaml_to_class(cfg).predict_from_cfg(movers, units, cfg)
 
