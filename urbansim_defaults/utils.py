@@ -564,8 +564,6 @@ def _print_number_unplaced(df, fieldname):
           df[fieldname].value_counts().get(-1, 0)
 
 
-# COMMENTING OUT LINES THAT ASSUME A BUILDING FORM OR USE TYPE CALLED 'RESIDENTIAL'
-# WE'LL NEED TO FIX THIS MORE CLEANLY LATER  - SAM
 def run_feasibility(parcels, parcel_price_callback,
                     parcel_use_allowed_callback, residential_to_yearly=True,
                     parcel_filter=None, only_built=True, forms_to_test=None,
@@ -628,8 +626,8 @@ def run_feasibility(parcels, parcel_price_callback,
         df[use] = parcel_price_callback(use)
 
     # convert from cost to yearly rent
-#    if residential_to_yearly:
-#        df["residential"] *= pf.config.cap_rate
+    if residential_to_yearly:
+        df["residential"] *= pf.config.cap_rate
 
     print "Describe of the yearly rent by use"
     print df[pf.config.uses].describe()
@@ -653,15 +651,14 @@ def run_feasibility(parcels, parcel_price_callback,
 
         d[form] = pf.lookup(form, newdf, only_built=only_built,
                             pass_through=pass_through)
-#        if residential_to_yearly and "residential" in pass_through:
-#            d[form]["residential"] /= pf.config.cap_rate
+        if residential_to_yearly and "residential" in pass_through:
+            d[form]["residential"] /= pf.config.cap_rate
 
     far_predictions = pd.concat(d.values(), keys=d.keys(), axis=1)
 
     orca.add_table("feasibility", far_predictions)
 
 
-# Do we need to modify this to remove units as well?  -Sam
 def _remove_developed_buildings(old_buildings, new_buildings, unplace_agents):
     redev_buildings = old_buildings.parcel_id.isin(new_buildings.parcel_id)
     l = len(old_buildings)
@@ -795,8 +792,7 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
         new_buildings["year_built"] = year
 
     if not isinstance(forms, list):
-        # form gets set only if 'forms' is a list, so if it wasn't set previously
-        # then fill column with the single form
+        # form gets set only if forms is a list
         new_buildings["form"] = forms
 
     if form_to_btype_callback is not None:
@@ -817,24 +813,32 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
     print "{:,} feasible buildings after running developer".format(
           len(dev.feasibility))
 
+    old_buildings = buildings.to_frame(buildings.local_columns)
+    new_buildings = new_buildings[buildings.local_columns]
+
+    if remove_developed_buildings:
+        old_buildings = \
+            _remove_developed_buildings(old_buildings, new_buildings, unplace_agents)
+
+    all_buildings = dev.merge(old_buildings, new_buildings)
+
+    orca.add_table("buildings", all_buildings)
+    
     # Modifying the following block to:
     # - add unit_residential_rent column (not strictly necessary because if it's 
     #   in old_units but missing from new_units it will fill as NaNs, but this is cleaner)
     # - add unit_tenure based on the building form (TO DO: think about refactoring to
     #   generalize this better)
-    # - no longer return, because it had to be moved earlier in the code flow in order
-    #   to access new_buildings.form before that column is removed
 
     if "residential_units" in orca.list_tables() and residential:
         # need to add units to the units table as well
         old_units = orca.get_table("residential_units")
         old_units = old_units.to_frame(old_units.local_columns)
 
-        o_forms = ["residential_ownerocc"]  # owner-occupied building form names
-        r_forms = ["residential_rented"]  # rented building form names
-        new_buildings["tenure"] = new_buildings.form.\
-        								replace(o_forms, 0).replace(r_forms, 1)        
-        # TO DO: should we abstract this similarly to form_to_btype?
+        o_forms = ['residential_ownerocc']  # owner-occupied building form names
+        r_forms = ['residential_rented']  # rented building form names
+        new_buildings['tenure'] = new_buildings.form.replace(o_forms, 0).\
+        											 replace(r_forms, 1)
         # TO DO: catch unmatched form names
 
         new_units = pd.DataFrame({
@@ -842,9 +846,9 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
             "unit_residential_rent": 0,
             "num_units": 1,
             "deed_restricted": 0,
-            "unit_tenure": np.repeat(new_buildings.tenure.values, 
-                                     new_buildings.residential_units.\
-                                     astype('int32').values),
+            "unit_tenure": np.repeat(new_buildings.tenure, 
+            						 new_buildings.residential_units.\
+            						 astype('int32').values),
             "unit_num": np.concatenate([np.arange(i) for i in \
                                         new_buildings.residential_units.values]),
             "building_id": np.repeat(new_buildings.index.values,
@@ -864,21 +868,13 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
 
         orca.add_table("residential_units", all_units)
 
-    old_buildings = buildings.to_frame(buildings.local_columns)
-    new_buildings = new_buildings[buildings.local_columns]
+        return ret_buildings
+        # pondered returning ret_buildings, new_units but users can get_table
+        # the units if they want them - better to avoid breaking the api
 
-    if remove_developed_buildings:
-        old_buildings = \
-            _remove_developed_buildings(old_buildings, new_buildings, unplace_agents)
-
-    all_buildings = dev.merge(old_buildings, new_buildings)
-
-    orca.add_table("buildings", all_buildings)
-    
-	# NOTE - It seems like the returned table can't be matched to any other data, 
-	# because it doesn't include the final building_id's that are generated in the
-	# dev.merge() call. This might be worth revisiting; for example it prevents us
-	# from assigning unit tenure in models.py  -Sam
+        # NOTE - I don't think there's actually a way to look up the new units outside
+        # of here, because ret_buildings doesn't include the final building_id that's 
+        # generated by the dev.merge() line. -Sam 
 
     return ret_buildings
 
