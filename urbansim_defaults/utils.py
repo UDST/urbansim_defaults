@@ -695,7 +695,7 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
                   residential=True, bldg_sqft_per_job=400.0,
                   min_unit_size=400, remove_developed_buildings=True,
                   unplace_agents=['households', 'jobs'],
-                  num_units_to_build=None):
+                  num_units_to_build=None, profit_to_prob_func=None):
     """
     Run the developer model to pick and build buildings
 
@@ -752,6 +752,8 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
         computing it internally by using the length of agents adn the sum of
         the relevant supply columin - this trusts the caller to know how to compute
         this.
+    profit_to_prob_func: func
+        Passed directly to dev.pick
 
     Returns
     -------
@@ -778,7 +780,8 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
                              min_unit_size=min_unit_size,
                              drop_after_build=True,
                              residential=residential,
-                             bldg_sqft_per_job=bldg_sqft_per_job)
+                             bldg_sqft_per_job=bldg_sqft_per_job,
+                             profit_to_prob_func=profit_to_prob_func)
 
     orca.add_table("feasibility", dev.feasibility)
 
