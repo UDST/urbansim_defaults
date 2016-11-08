@@ -245,7 +245,7 @@ def hedonic_estimate(cfg, tbl, join_tbls):
     return yaml_to_class(cfg).fit_from_cfg(df, cfg)
 
 
-def hedonic_simulate(cfg, tbl, join_tbls, out_fname):
+def hedonic_simulate(cfg, tbl, join_tbls, out_fname, cast=False):
     """
     Simulate the hedonic model for the specified table
 
@@ -261,11 +261,13 @@ def hedonic_simulate(cfg, tbl, join_tbls, out_fname):
     out_fname : string
         The output field name (should be present in tbl) to which to write
         the resulting column to
+    cast : boolean
+        Should the output be cast to match the existing column.    
     """
     cfg = misc.config(cfg)
     df = to_frame(tbl, join_tbls, cfg)
     price_or_rent, _ = yaml_to_class(cfg).predict_from_cfg(df, cfg)
-    tbl.update_col_from_series(out_fname, price_or_rent)
+    tbl.update_col_from_series(out_fname, price_or_rent, cast=cast)
 
 
 def lcm_estimate(cfg, choosers, chosen_fname, buildings, join_tbls):
@@ -300,7 +302,7 @@ def lcm_estimate(cfg, choosers, chosen_fname, buildings, join_tbls):
 
 def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
                  supply_fname, vacant_fname,
-                 enable_supply_correction=None):
+                 enable_supply_correction=None, cast=False):
     """
     Simulate the location choices for the specified choosers
 
@@ -329,6 +331,8 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         Should contain keys "price_col" and "submarket_col" which are set to
         the column names in buildings which contain the column for prices and
         an identifier which segments buildings into submarkets
+    cast : boolean
+        Should the output be cast to match the existing column.
     """
     cfg = misc.config(cfg)
 
@@ -443,7 +447,7 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
     new_buildings = pd.Series(units.loc[new_units.values][out_fname].values,
                               index=new_units.index)
 
-    choosers.update_col_from_series(out_fname, new_buildings)
+    choosers.update_col_from_series(out_fname, new_buildings, cast=cast)
     _print_number_unplaced(choosers, out_fname)
 
     if enable_supply_correction is not None:
@@ -461,7 +465,7 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
     print "    and %d overfull buildings" % len(vacant_units[vacant_units < 0])
 
 
-def simple_relocation(choosers, relocation_rate, fieldname):
+def simple_relocation(choosers, relocation_rate, fieldname, cast=False):
     """
     Run a simple rate based relocation model
 
@@ -474,6 +478,8 @@ def simple_relocation(choosers, relocation_rate, fieldname):
     location_fname : str
         The field name in the resulting dataframe to set to -1 (to unplace
         new agents)
+    cast : boolean
+        Should the output be cast to match the existing column.
 
     Returns
     -------
@@ -486,7 +492,7 @@ def simple_relocation(choosers, relocation_rate, fieldname):
     chooser_ids = np.random.choice(choosers.index, size=int(relocation_rate *
                                    len(choosers)), replace=False)
     choosers.update_col_from_series(fieldname,
-                                    pd.Series(-1, index=chooser_ids))
+                                    pd.Series(-1, index=chooser_ids), cast=cast)
 
     _print_number_unplaced(choosers, fieldname)
 
