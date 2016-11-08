@@ -526,7 +526,7 @@ def simple_transition(tbl, rate, location_fname):
     orca.add_table(tbl.name, df)
 
 
-def full_transition(agents, agent_controls, year, settings, location_fname):
+def full_transition(agents, agent_controls, year, settings, location_fname, linked_tables=None):
     """
     Run a transition model based on control totals specified in the usual
     UrbanSim way
@@ -548,6 +548,11 @@ def full_transition(agents, agent_controls, year, settings, location_fname):
     location_fname : str
         The field name in the resulting dataframe to set to -1 (to unplace
         new agents)
+    linked_tables : dict of tuple, optional
+        Dictionary of table_name: (table, 'column name') pairs. The column name
+        should match the index of `agents`. Indexes in `agents` that
+        are copied or removed will also be copied and removed in
+        linked tables. 
 
     Returns
     -------
@@ -555,14 +560,20 @@ def full_transition(agents, agent_controls, year, settings, location_fname):
     """
     ct = agent_controls.to_frame()
     hh = agents.to_frame(agents.local_columns +
-                         settings['add_columns'])
+                         settings.get('add_columns', []))
     print "Total agents before transition: {}".format(len(hh))
+    linked_tables = linked_tables or {}
+    for table_name, (table, col) in linked_tables.iteritems():
+        print "Total %s before transition: %s" % (table_name, len(table))
     tran = transition.TabularTotalsTransition(ct, settings['total_column'])
     model = transition.TransitionModel(tran)
-    new, added_hh_idx, new_linked = model.transition(hh, year)
+    new, added_hh_idx, new_linked = model.transition(hh, year, linked_tables=linked_tables)
     new.loc[added_hh_idx, location_fname] = -1
     print "Total agents after transition: {}".format(len(new))
     orca.add_table(agents.name, new)
+    for table_name, table in new_linked.iteritems():
+        print "Total %s after transition: %s" % (table_name, len(table))
+        orca.add_table(table_name, table)
 
 
 def _print_number_unplaced(df, fieldname):
