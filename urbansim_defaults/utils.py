@@ -239,7 +239,7 @@ def hedonic_estimate(cfg, tbl, join_tbls, out_cfg=None):
     join_tbls : list of strings
         A list of land use dataframes to give neighborhood info around the
         buildings - will be joined to the buildings using existing broadcasts
-    cfg_out : string, optional
+    out_cfg : string, optional
         The name of the yaml config file to which to write the estimation results.
         If not given, the input file cfg is overwritten.
     """
@@ -295,7 +295,7 @@ def lcm_estimate(cfg, choosers, chosen_fname, buildings, join_tbls, out_cfg=None
     join_tbls : list of strings
         A list of land use dataframes to give neighborhood info around the
         buildings - will be joined to the buildings using existing broadcasts
-    cfg_out : string, optional
+    out_cfg : string, optional
         The name of the yaml config file to which to write the estimation results.
         If not given, the input file cfg is overwritten.
     """
