@@ -226,7 +226,7 @@ def yaml_to_class(cfg):
     }[model_type]
 
 
-def hedonic_estimate(cfg, tbl, join_tbls):
+def hedonic_estimate(cfg, tbl, join_tbls, out_cfg=None):
     """
     Estimate the hedonic model for the specified table
 
@@ -239,10 +239,15 @@ def hedonic_estimate(cfg, tbl, join_tbls):
     join_tbls : list of strings
         A list of land use dataframes to give neighborhood info around the
         buildings - will be joined to the buildings using existing broadcasts
+    out_cfg : string, optional
+        The name of the yaml config file to which to write the estimation results.
+        If not given, the input file cfg is overwritten.
     """
     cfg = misc.config(cfg)
     df = to_frame(tbl, join_tbls, cfg)
-    return yaml_to_class(cfg).fit_from_cfg(df, cfg)
+    if out_cfg is not None:
+        out_cfg = misc.config(out_cfg)
+    return yaml_to_class(cfg).fit_from_cfg(df, cfg, outcfgname=out_cfg)
 
 
 def hedonic_simulate(cfg, tbl, join_tbls, out_fname, cast=False):
@@ -270,7 +275,7 @@ def hedonic_simulate(cfg, tbl, join_tbls, out_fname, cast=False):
     tbl.update_col_from_series(out_fname, price_or_rent, cast=cast)
 
 
-def lcm_estimate(cfg, choosers, chosen_fname, buildings, join_tbls):
+def lcm_estimate(cfg, choosers, chosen_fname, buildings, join_tbls, out_cfg=None):
     """
     Estimate the location choices for the specified choosers
 
@@ -290,14 +295,20 @@ def lcm_estimate(cfg, choosers, chosen_fname, buildings, join_tbls):
     join_tbls : list of strings
         A list of land use dataframes to give neighborhood info around the
         buildings - will be joined to the buildings using existing broadcasts
+    out_cfg : string, optional
+        The name of the yaml config file to which to write the estimation results.
+        If not given, the input file cfg is overwritten.
     """
     cfg = misc.config(cfg)
     choosers = to_frame(choosers, [], cfg, additional_columns=[chosen_fname])
     alternatives = to_frame(buildings, join_tbls, cfg)
+    if out_cfg is not None:
+        out_cfg = misc.config(out_cfg)
     return yaml_to_class(cfg).fit_from_cfg(choosers,
                                            chosen_fname,
                                            alternatives,
-                                           cfg)
+                                           cfg,
+                                           outcfgname=out_cfg)
 
 
 def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
