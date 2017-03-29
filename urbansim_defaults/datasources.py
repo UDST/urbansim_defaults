@@ -8,7 +8,7 @@ import pandas as pd
 from urbansim.utils import misc
 import yaml
 
-import utils
+from urbansim_defaults import utils
 
 warnings.filterwarnings('ignore', category=pd.io.pytables.PerformanceWarning)
 pd.options.mode.chained_assignment = None
