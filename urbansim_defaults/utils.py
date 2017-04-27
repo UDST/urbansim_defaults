@@ -857,32 +857,6 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
 
     orca.add_table("buildings", all_buildings)
 
-    if "residential_units" in orca.list_tables() and residential:
-        # need to add units to the units table as well
-        old_units = orca.get_table("residential_units")
-        old_units = old_units.to_frame(old_units.local_columns)
-        new_units = pd.DataFrame({
-            "unit_residential_price": 0,
-            "num_units": 1,
-            "deed_restricted": 0,
-            "unit_num": np.concatenate([np.arange(i) for i in \
-                                        new_buildings.residential_units.values]),
-            "building_id": np.repeat(new_buildings.index.values,
-                                     new_buildings.residential_units.\
-                                     astype('int32').values)
-        }).sort(columns=["building_id", "unit_num"]).reset_index(drop=True)
-
-        print "Adding {:,} units to the residential_units table".\
-            format(len(new_units))
-        all_units = dev.merge(old_units, new_units)
-        all_units.index.name = "unit_id"
-
-        orca.add_table("residential_units", all_units)
-
-        return ret_buildings
-        # pondered returning ret_buildings, new_units but users can get_table
-        # the units if they want them - better to avoid breaking the api
-
     return ret_buildings
 
 
