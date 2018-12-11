@@ -700,9 +700,9 @@ def _remove_developed_buildings(old_buildings, new_buildings, unplace_agents):
 
     old_buildings = old_buildings[np.logical_not(redev_buildings)]
     l2 = len(old_buildings)
-    if l2-l > 0:
+    if l-l2 > 0:
         print "Dropped {} buildings because they were redeveloped".\
-            format(l2-l)
+            format(l-l2)
 
     for tbl in unplace_agents:
         agents = orca.get_table(tbl).local
