@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name='urbansim_defaults',
-    version='0.1dev',
+    version='0.1',
     description='Installs and runs the urbansim defaults.',
-    author='Autodesk',
-    author_email='udst@autodesk.com',
+    author='UrbanSim, Inc.',
+    author_email='info@urbansim.com',
     license='BSD',
     url='https://github.com/udst/urbansim_defaults',
     classifiers=[
