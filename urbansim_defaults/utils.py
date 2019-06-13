@@ -313,7 +313,8 @@ def lcm_estimate(cfg, choosers, chosen_fname, buildings, join_tbls, out_cfg=None
 
 def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
                  supply_fname, vacant_fname,
-                 enable_supply_correction=None, cast=False):
+                 enable_supply_correction=None, cast=False,
+                 alternative_ratio=None):
     """
     Simulate the location choices for the specified choosers
 
@@ -344,6 +345,10 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         an identifier which segments buildings into submarkets
     cast : boolean
         Should the output be cast to match the existing column.
+    alternative_ratio : float, optional
+        Value to override the setting in urbansim.models.dcm.predict_from_cfg.
+        Above this ratio of alternatives to choosers (default of 2.0), the
+        alternatives will be sampled to improve computational performance
     """
     cfg = misc.config(cfg)
 
@@ -448,7 +453,8 @@ def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
         print "    reducing locations to size of movers for performance gain"
         movers = movers.head(int(vacant_units.sum()))
 
-    new_units, _ = yaml_to_class(cfg).predict_from_cfg(movers, units, cfg)
+    new_units, _ = yaml_to_class(cfg).predict_from_cfg(movers, units, cfg, 
+                                        alternative_ratio=alternative_ratio)
 
     # new_units returns nans when there aren't enough units,
     # get rid of them and they'll stay as -1s
