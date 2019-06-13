@@ -314,7 +314,7 @@ def lcm_estimate(cfg, choosers, chosen_fname, buildings, join_tbls, out_cfg=None
 def lcm_simulate(cfg, choosers, buildings, join_tbls, out_fname,
                  supply_fname, vacant_fname,
                  enable_supply_correction=None, cast=False,
-                 alternative_ratio=None):
+                 alternative_ratio=2.0):
     """
     Simulate the location choices for the specified choosers
 
