@@ -267,7 +267,7 @@ def hedonic_simulate(cfg, tbl, join_tbls, out_fname, cast=False):
         The output field name (should be present in tbl) to which to write
         the resulting column to
     cast : boolean
-        Should the output be cast to match the existing column.    
+        Should the output be cast to match the existing column.
     """
     cfg = misc.config(cfg)
     df = to_frame(tbl, join_tbls, cfg)
@@ -574,7 +574,7 @@ def full_transition(agents, agent_controls, year, settings, location_fname, link
                          settings.get('add_columns', []))
     print "Total agents before transition: {}".format(len(hh))
     linked_tables = linked_tables or {}
-    for table_name, (table, col) in linked_tables.iteritems():
+    for table_name, (table, col) in linked_tables.items():
         print "Total %s before transition: %s" % (table_name, len(table))
     tran = transition.TabularTotalsTransition(ct, settings['total_column'])
     model = transition.TransitionModel(tran)
@@ -582,7 +582,7 @@ def full_transition(agents, agent_controls, year, settings, location_fname, link
     new.loc[added_hh_idx, location_fname] = -1
     print "Total agents after transition: {}".format(len(new))
     orca.add_table(agents.name, new)
-    for table_name, table in new_linked.iteritems():
+    for table_name, table in new_linked.items():
         print "Total %s after transition: %s" % (table_name, len(table))
         orca.add_table(table_name, table)
 
@@ -775,7 +775,7 @@ def run_developer(forms, agents, buildings, supply_fname, parcel_size,
         For all tables in the list, will look for field building_id and set
         it to -1 for buildings which are removed - only executed if
         remove_developed_buildings is true
-    num_units_to_build: optional, int 
+    num_units_to_build: optional, int
         If num_units_to_build is passed, build this many units rather than
         computing it internally by using the length of agents adn the sum of
         the relevant supply columin - this trusts the caller to know how to compute
@@ -880,10 +880,10 @@ def scheduled_development_events(buildings, new_buildings,
 
     print "Adding {:,} buildings as scheduled development events".format(
           len(new_buildings))
-    
+
     old_buildings = buildings.to_frame(buildings.local_columns)
     new_buildings = new_buildings[buildings.local_columns]
-    
+
     print "Res units before: {:,}".format(old_buildings.residential_units.sum())
     print "Non-res sqft before: {:,}".format(old_buildings.non_residential_sqft.sum())
 
@@ -892,7 +892,7 @@ def scheduled_development_events(buildings, new_buildings,
             _remove_developed_buildings(old_buildings, new_buildings, unplace_agents)
 
     all_buildings = developer.Developer.merge(old_buildings, new_buildings)
-    
+
     print "Res units after: {:,}".format(all_buildings.residential_units.sum())
     print "Non-res sqft after: {:,}".format(all_buildings.non_residential_sqft.sum())
 
