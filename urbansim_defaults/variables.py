@@ -4,7 +4,7 @@ import pandas as pd
 from urbansim.utils import misc
 
 from urbansim_defaults import datasources
-from urbansim_defaults import variables
+from urbansim_defaults import utils
 
 
 #####################
