@@ -9,8 +9,8 @@ from urbansim.utils import misc
 from urbansim.utils import networks
 from urbansim_defaults import utils
 
-import datasources
-import variables
+from urbansim_defaults import datasources
+from urbansim_defaults import variables
 
 
 @orca.step('rsh_estimate')
