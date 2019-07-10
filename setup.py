@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='urbansim_defaults',
-    version='0.1',
+    version='0.1.1',
     description='Installs and runs the urbansim defaults.',
     author='UrbanSim, Inc.',
     author_email='info@urbansim.com',
