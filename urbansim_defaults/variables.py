@@ -3,8 +3,8 @@ import orca
 import pandas as pd
 from urbansim.utils import misc
 
-import datasources
-import utils
+from urbansim_defaults import datasources
+from urbansim_defaults import utils
 
 
 #####################
