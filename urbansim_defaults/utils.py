@@ -582,7 +582,7 @@ def full_transition(agents, agent_controls, year, settings, location_fname, link
                          settings.get('add_columns', []))
     print("Total agents before transition: {}".format(len(hh)))
     linked_tables = linked_tables or {}
-    for table_name, (table, col) in linked_tables.iteritems():
+    for table_name, (table, col) in linked_tables.items():
         print("Total %s before transition: %s" % (table_name, len(table)))
     tran = transition.TabularTotalsTransition(ct, settings['total_column'])
     model = transition.TransitionModel(tran)
@@ -590,7 +590,7 @@ def full_transition(agents, agent_controls, year, settings, location_fname, link
     new.loc[added_hh_idx, location_fname] = -1
     print("Total agents after transition: {}".format(len(new)))
     orca.add_table(agents.name, new)
-    for table_name, table in new_linked.iteritems():
+    for table_name, table in new_linked.items():
         print("Total %s after transition: %s" % (table_name, len(table)))
         orca.add_table(table_name, table)
 
