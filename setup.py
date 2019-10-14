@@ -15,5 +15,12 @@ setup(
         'Programming Language :: Python :: 3.7',
         'License :: OSI Approved :: BSD License'
     ],
-    packages=find_packages(exclude=['*.tests'])
+    packages=find_packages(exclude=['*.tests']),
+    install_requires=[
+        'numpy',
+        'orca',
+        'pandana',
+        'pandas',
+        'urbansim'
+    ]
 )
