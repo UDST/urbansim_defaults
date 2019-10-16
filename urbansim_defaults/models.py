@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import time
 
@@ -9,8 +11,8 @@ from urbansim.utils import misc
 from urbansim.utils import networks
 from urbansim_defaults import utils
 
-import datasources
-import variables
+from urbansim_defaults import datasources
+from urbansim_defaults import variables
 
 
 @orca.step('rsh_estimate')
@@ -120,7 +122,7 @@ def build_networks(settings):
 def neighborhood_vars(net):
     nodes = networks.from_yaml(net, "neighborhood_vars.yaml")
     nodes = nodes.fillna(0)
-    print nodes.describe()
+    print(nodes.describe())
     orca.add_table("nodes", nodes)
 
 
@@ -128,7 +130,7 @@ def neighborhood_vars(net):
 def price_vars(net):
     nodes2 = networks.from_yaml(net, "price_vars.yaml")
     nodes2 = nodes2.fillna(0)
-    print nodes2.describe()
+    print(nodes2.describe())
     nodes = orca.get_table('nodes')
     nodes = nodes.to_frame().join(nodes2)
     orca.add_table("nodes", nodes)
