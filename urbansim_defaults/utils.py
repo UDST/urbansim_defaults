@@ -219,7 +219,7 @@ def yaml_to_class(cfg):
     Nothing
     """
     import yaml
-    model_type = yaml.load(open(cfg))["model_type"]
+    model_type = yaml.safe_load(open(cfg))["model_type"]
     return {
         "regression": RegressionModel,
         "segmented_regression": SegmentedRegressionModel,
